@@ -146,12 +146,15 @@ internal static class ConsoleGraph
             case 3: // 1st-order high-pass: y[k] = fpar*y[k-1] + (data[k]-data[k-1])/2
                 float fpar = st.FPAR;
                 float prev = 0f;
+                float prevRaw = data[0];
                 for (int i = 1; i < data.Length; i++)
                 {
-                    float d = data[i] - data[i - 1];
+                    float curRaw = data[i];
+                    float d = curRaw - prevRaw;
                     float hp = fpar * prev + 0.5f * d;
                     data[i] = hp;
                     prev = hp;
+                    prevRaw = curRaw;
                 }
                 data[0] = 0f;
                 break;

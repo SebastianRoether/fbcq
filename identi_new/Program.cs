@@ -68,6 +68,7 @@ internal static class Program
             Console.WriteLine("  Graphic channel display ______________________  8");
             Console.WriteLine("  System identification ________________________  9");
             Console.WriteLine("  Auto test: PT4 step response (T=10s, K=1, Ts=1s)  a");
+            Console.WriteLine("  Auto test: PT1 PRBS identification (T=5s, K=1, Ts=1s)  b");
             Console.WriteLine();
             string job = ReadMainMenuChoice();
 
@@ -83,6 +84,7 @@ internal static class Program
                 case "8": GraphMenu();           break;
                 case "9": IdentMenu();           break;
                 case "a": RunAutoTest();         break;
+                case "b": RunAutoTestPRBS();     break;
             }
         }
     }
@@ -811,6 +813,151 @@ internal static class Program
         ConsoleGraph.PlotChannels(st, len, 0, false);
     }
 
+    // ============================================================
+    // AUTO TEST B – first-order PT1 with 7-bit PRBS input
+    // Demonstrates AR coefficient recovery via backward LS.
+    // ============================================================
+    static void RunAutoTestPRBS()
+    {
+        // Two cascaded PT1s (2nd-order):
+        //   x[k] = z1·x[k-1] + (1-z1)·u[k-1]     (inner state, T1=5s)
+        //   y[k] = z2·y[k-1] + (1-z2)·x[k-1]      (output,     T2=10s)
+        //
+        // Equivalent AR(2) difference equation:
+        //   y[k] = a1·y[k-1] + a2·y[k-2] + b·u[k-2]
+        //   a1 = z1+z2,  a2 = −z1·z2,  b = (1−z1)·(1−z2),  DC gain = 1
+        //
+        // Backward Xident (n=2) recovers via Yule-Walker symmetry:
+        //   W[1] ≈ a2  (coefficient of y[t+2])
+        //   W[2] ≈ a1  (coefficient of y[t+1])
+        //   W[3], W[4] ≈ 0  (backward causality kills MA terms)
+        const double z1 = 0.818730753078; // e^{-0.2}, T1=5s
+        const double z2 = 0.904837418036; // e^{-0.1}, T2=10s
+        const double a1 = z1 + z2;        // ≈ 1.723568
+        const double a2 = -(z1 * z2);     // ≈ −0.740818 (= −e^{−0.3})
+        const double b  = (1-z1) * (1-z2);// ≈ 0.017245, DC gain = 1
+        const int    len = 400;
+        const short  hi  = 2048;          // PRBS amplitude (raw counts)
+        const short  lo  = -2048;
+
+        // ---- configuration ----
+        st.NADU   = 1;
+        st.NDAU   = 1;
+        st.LEN    = len;
+        st.NM     = 1;
+        st.NU     = 1;
+        st.NYI[1] = 2;                  // 2nd-order model
+        st.N      = 2;
+        st.IAD[1] = 1;                  // output → A/D ch 1
+        st.IDA[1] = st.NADMAX + 1;      // input  → D/A ch 1 (index 9)
+        st.NANF   = 3;                  // need 2 future points → start at sample 3
+        st.IANZ   = len - 3;
+        st.IGLW   = 0;
+        st.JOBID  = 0;
+
+        int chIn  = st.NADMAX + 1;  // = 9
+        int chOut = 1;
+
+        st.PMIN[chOut] = -15f; st.PMAX[chOut] = 15f;
+        st.PMIN[chIn]  = -1f;  st.PMAX[chIn]  = 1f;
+        st.TEXT[chOut] = "Output (2xPT1 casc.)";
+        st.TEXT[chIn]  = "Input  (7-bit PRBS) ";
+        st.PBEZ[chOut] = "[V]   ";
+        st.PBEZ[chIn]  = "[V]   ";
+
+        // ---- 7-bit maximal PRBS (poly x^7+x^6+1, period=127) ----
+        // 400 samples ≈ 3.15 periods → persistently exciting of order 2.
+        int[] reg = new int[8];
+        for (int i = 1; i <= 7; i++) reg[i] = 1;  // all-ones seed
+        for (int k = 1; k <= len; k++)
+        {
+            st.IDAT[chIn, k] = reg[7] == 1 ? hi : lo;
+            int fb = reg[7] ^ reg[6];              // feedback taps 7 and 6
+            for (int r = 7; r > 1; r--) reg[r] = reg[r - 1];
+            reg[1] = fb;
+        }
+
+        // ---- simulate: cascade state-space ----
+        double xPrev = 0, yPrev = 0, uPrev = 0;
+        for (int k = 1; k <= len; k++)
+        {
+            double xCurr = z1 * xPrev + (1-z1) * uPrev;
+            double yCurr = z2 * yPrev + (1-z2) * xPrev;
+            st.IDAT[chOut, k] = (short)Math.Clamp((long)Math.Round(yCurr), -32000, 32000);
+            xPrev = xCurr;
+            yPrev = yCurr;
+            uPrev = st.IDAT[chIn, k];
+        }
+
+        st.NPOINT = len;
+        st.IZ     = len;
+
+        Console.WriteLine();
+        Console.WriteLine("  [AUTO TEST B]  2nd-order cascaded PT1 with 7-bit PRBS identification");
+        Console.WriteLine($"    System  : PT1(T=5s) → PT1(T=10s),  K=1,  Ts=1s");
+        Console.WriteLine($"    Poles   : z1=e^(−0.2)≈{z1:F6},  z2=e^(−0.1)≈{z2:F6}");
+        Console.WriteLine($"    AR coefs: a1=z1+z2≈{a1:F6},  a2=−z1·z2≈{a2:F6}");
+        Console.WriteLine($"    Input   : 7-bit PRBS (period=127, {len/127.0:F1} periods in {len} samples)");
+        Console.WriteLine($"    Backward Xident (n=2) should recover via Yule-Walker:");
+        Console.WriteLine($"      W[1] ≈ a2 ≈ {a2:F6}  (coeff of y[t+2])");
+        Console.WriteLine($"      W[2] ≈ a1 ≈ {a1:F6}  (coeff of y[t+1])");
+        Console.WriteLine($"      W[3],W[4] ≈ 0         (backward causality)");
+        Console.WriteLine();
+
+        // ---- zero constraint map ----
+        for (int i = 1; i <= LTH; i++)
+            for (int j = 1; j <= LM; j++)
+                ipos0[i, j] = 0;
+
+        Console.WriteLine("  Running Least-Squares identification...");
+        int job = 1;
+        Identification.Xident(
+            st.W, st.IDAT,
+            st.IDA, st.IAD,
+            st.LEN, st.NANF, st.IANZ, st.NPOINT,
+            st.NYI, st.NU, st.NM,
+            dmat, rh, bWork, ipos0, st.IGLW, wksp,
+            ref job);
+
+        switch (job)
+        {
+            case 0:
+                st.JOBID = 1;
+                Console.WriteLine("  Identification successful.");
+                Console.WriteLine();
+                Console.WriteLine("  AR recovery (backward Yule-Walker, both poles identifiable):");
+                float w1 = st.W[1], w2 = st.W[2];
+                float err1 = Math.Abs(w1 - (float)a2);
+                float err2 = Math.Abs(w2 - (float)a1);
+                Console.WriteLine($"    W[1]: identified={w1,10:F6}   true a2={a2:F6}"
+                    + $"   error={err1:F6} ({err1/Math.Abs((float)a2)*100:F2}%)");
+                Console.WriteLine($"    W[2]: identified={w2,10:F6}   true a1={a1:F6}"
+                    + $"   error={err2:F6} ({err2/(float)a1*100:F2}%)");
+                Console.WriteLine($"    W[3] (B_ss[1])={st.W[3]:F6}  W[4] (B_ss[2])={st.W[4]:F6}  (both ≈0 expected)");
+                bool ok1 = err1 < 0.05f * (float)Math.Abs(a2);
+                bool ok2 = err2 < 0.05f * (float)a1;
+                if (ok1 && ok2)
+                    Console.WriteLine("    ✓ Both AR coefficients correctly identified (error < 5%)");
+                else
+                    Console.WriteLine($"   *AR error out of 5% band: W[1]{(ok1 ? "✓" : "✗")}  W[2]{(ok2 ? "✓" : "✗")}");
+                Identification.PrintModel(st);
+                break;
+            case 1:
+                Console.WriteLine(" *Singular matrix – unexpected for PRBS excitation.*");
+                break;
+            case 2:
+                Console.WriteLine(" *Error: Unstable auxiliary model.*");
+                break;
+        }
+
+        // ---- plot both channels ----
+        st.IPL[1] = chOut;
+        st.IPL[2] = chIn;
+        st.NPL    = 2;
+        st.JOBPL  = 0;
+        ConsoleGraph.PlotChannels(st, len, 0, false);
+    }
+
     // Print identified W[1..N] vs true AR parameters.
     // phi ordering: phi[1]=y[k-N], phi[2]=y[k-N+1], ..., phi[N]=y[k-1]
     // So W[1]=coeff of y[k-N], W[N]=coeff of y[k-1].
@@ -865,10 +1012,12 @@ internal static class Program
         while (true)
         {
             Console.Write("  Your choice: ");
-            string? s = Console.ReadLine()?.Trim().ToLowerInvariant();
-            if (s == "a") return "a";
-            if (int.TryParse(s, out int v) && v >= 1 && v <= 9) return s!;
-            Console.WriteLine("  Please enter 1-9 or 'a'.");
+            string? raw = Console.ReadLine();
+            if (raw == null) return "1";  // EOF (e.g. piped input) → exit
+            string s = raw.Trim().ToLowerInvariant();
+            if (s == "a" || s == "b") return s;
+            if (int.TryParse(s, out int v) && v >= 1 && v <= 9) return s;
+            Console.WriteLine("  Please enter 1-9, 'a', or 'b'.");
         }
     }
 

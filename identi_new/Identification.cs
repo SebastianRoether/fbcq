@@ -294,13 +294,19 @@ internal static class Identification
         // Print theta matrix
         MatrixLib.Mwrite(dmat, nth, nm, "THET", 4, nth1);
 
+        // Build W-derived source matrix for Xgmkon (AR coefficients packed column-wise:
+        // column i = AR coefficients for output i, rows 1..n).
+        // The Fortran XIDENT passes the packed W vector (as a matrix) to XGMKON, not DMAT.
+        float[,] aForGm = new float[n + 1, nm + 1];
+        for (int i = 1; i <= nm; i++)
+            for (int j = 1; j <= n; j++)
+                aForGm[j, i] = w[(i - 1) * n + j];
+
         // Build GM matrix and invert to get B in state-space form
-        MatrixLib.Mzeset(dmat, nth, nth);
-        MatrixLib.Xgmkon(dmat, dmat, n, nm, nyi); // Note: uses dmat as both A and GM
-        // Correct call: build GM into fresh part of dmat
         float[,] gm = new float[n + 1, n + 1];
-        MatrixLib.Xgmkon(gm, dmat, n, nm, nyi);
-        // Copy GN into dmat(1..n, 1..n) – reuse storage
+        MatrixLib.Xgmkon(gm, aForGm, n, nm, nyi);
+        // Copy GM into dmat(1..n, 1..n) – reuse storage
+        MatrixLib.Mzeset(dmat, nth, nth);
         for (int i = 1; i <= n; i++)
             for (int jj = 1; jj <= n; jj++)
                 dmat[i, jj] = gm[i, jj];

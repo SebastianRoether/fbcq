@@ -1,0 +1,55 @@
+ FBC (FeedBackController) , Roether 1987
+  
+ Prozessbezeichnung:Sollwertsprung geschl. Kreis  
+ Bezeichn. Antwort :Regelgr”áe                    
+ Bezeichn. Anregung:Reglerausgang                 
+ Physikal.Einheiten:s   V   V   
+ Integralanteil    ?N
+ Sprunganregung    ?N
+ Prozeá sprungf„hig?N
+ Anzahl Wertetripel:   15
+  
+   Zeitmarke         Prozessantwort    Prozessanregung
+   Anfangswerte  :   .000000    V      10.0000    V   
+   .000000    s      .000000    V      13.9129    V   
+   1.00000    s      .000000    V      11.4908    V   
+   2.00000    s      .000000    V      11.5585    V   
+   3.00000    s      .000000    V      11.6261    V   
+   4.00000    s      .000000    V      11.6600    V   
+   5.00000    s      .180774E-01V      11.6907    V   
+   7.00000    s      .107424    V      11.6168    V   
+   10.0000    s      .291273    V      11.4819    V   
+   15.0000    s      .631866    V      11.1924    V   
+   20.0000    s      .896227    V      10.9568    V   
+   25.0000    s      1.03337    V      10.8387    V   
+   30.0000    s      1.06122    V      10.8275    V   
+   40.0000    s      .979184    V      10.9448    V   
+   45.0000    s      .944530    V      10.9963    V   
+   60.0000    s      .957102    V      11.0177    V   
+   Endwerte      :   1.00000    V      11.0000    V   
+  
+ Gleichwertanteil  :  -10.0000     V   
+ Verstaerkung      :   1.00000     V    / V   
+  
+ Zeitdiskretes Prozessmodell:           
+ Anzahl Punkte     :   61
+ Abtastzeit        :   1.00000    s   
+ Totzeiten         :    4
+ Prozessordnung    :    3
+ Fehler LS-Sch„tzg.:   .334756E-01
+ Z-Uebertragungskoeffizienten B(z)/A(z):
+ Polynom-Position    Zaehler B(i)      Nenner A(i)    
+ Koeffizient Nr. 1   .00000000         1.0000000      
+ Koeffizient Nr. 2   .50495520E-02    -1.4802606      
+ Koeffizient Nr. 3   .88637153E-02     .22522559      
+ Koeffizient Nr. 4  -.75242186E-03     .26819586      
+  
+ Reglerkenngroessen:                    
+ KP:   1.477     TI:   22.11    s    TD:   1.620    s    T1:   .0000    s   
+ Stellgewichtung R :   .1000    
+  
+ Parameter der Minimierungsprozedur:    
+   .1000E-06   .1000E-02   .1000E-02   .1000E-01   .2000       .5000E-01
+ Max. Optim.-Stufen:   10
+ Ausgabeoption     :    1
+

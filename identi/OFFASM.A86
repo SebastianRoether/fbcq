@@ -1,0 +1,41 @@
+;***********************************************************
+;	
+;	OFFASM
+;
+;       RAWIO
+;
+;************************************************************
+;
+ccpmint		equ	224	; ccpm interrupt
+c_rawio		equ	006	; 
+;
+;*********************************************************
+;
+;	 R A W I O 
+;
+;	ZUR ABFRAGE DER CONSOLE OHNE WARTEN
+;
+;**********************************************************
+;
+PUBLIC 	IRAWIO
+	CSEG
+;	
+IRAWIO:	push	bp
+	push	ds
+;
+	mov	bp,sp
+;
+	mov	cl,c_rawio		; abfragen console
+	mov	dl,0ffh		 	; input status (00-> kein chr.)
+	int	ccpmint
+        xor     ah,ah
+;
+;
+        mov     sp,bp
+	pop	ds
+	pop	bp
+;
+	retf 	
+;
+	end
+

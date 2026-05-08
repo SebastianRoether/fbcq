@@ -1,0 +1,51 @@
+ FBC (FeedBackController) , Roether 1987
+  
+ Prozessbezeichnung:DampfÅberhitzermodell 5. Ord. 
+ Bezeichn. Antwort :Temperatur Austritt           
+ Bezeichn. Anregung:Stellung Einspritzventil      
+ Physikal.Einheiten:s   Grad %  
+ Integralanteil    ?N
+ Sprunganregung    ?J
+ Proze· sprungfÑhig?N
+ Anzahl Wertetripel:    9
+  
+   Zeitmarke         Prozessantwort    Prozessanregung
+   Anfangswerte  :   530.000    Grad   20.0000     %  
+   .000000    s      530.000    Grad   21.0000     %  
+   40.0000    s      529.990    Grad   21.0000     %
+   100.000    s      529.900    Grad   21.0000     %
+   200.000    s      529.600    Grad   21.0000     %
+   300.000    s      529.300    Grad   21.0000     %
+   420.000    s      529.100    Grad   21.0000     %
+   600.000    s      529.020    Grad   21.0000     %
+   700.000    s      529.005    Grad   21.0000     %
+   1200.00    s      529.000    Grad   21.0000     %
+   Endwerte      :   529.000    Grad   21.0000     %  
+  
+ Gleichwertanteil  :   550.000     Grad
+ Verstaerkung      :  -1.00000     Grad /  %  
+  
+ Zeitdiskretes Prozessmodell:           
+ Anzahl Punkte     :   61
+ Abtastzeit        :   20.0000    s   
+ Totzeiten         :    0
+ Prozessordnung    :    5
+ Fehler LS-SchÑtzg.:   .000000    
+ Z-Uebertragungskoeffizienten B(z)/A(z):
+ Polynom-Position    Zaehler B(i)      Nenner A(i)    
+ Koeffizient Nr. 1   .00000000         1.0000000      
+ Koeffizient Nr. 2  -.17300000E-02    -3.5624730      
+ Koeffizient Nr. 3  -.18310000E-02     5.0764840      
+ Koeffizient Nr. 4   .21430000E-02    -3.6169670      
+ Koeffizient Nr. 5  -.59500000E-03     1.2885350      
+ Koeffizient Nr. 6   .49000000E-04    -.18361500      
+  
+ Reglerkenngroessen:                    
+ KR:  -.9029     TI:   155.1    s    TD:   85.47    s    T1:   37.87    s   
+ Stellgewichtung R :   .2000    
+  
+ Parameter der Minimierungsprozedur:    
+   .1000E-06   .1000E-02   .1000E-02   .1000E-01   .2000       .5000E-01
+ Max. Optim.-Stufen:   10
+ Ausgabeoption     :    1
+

@@ -1,0 +1,46 @@
+ FBC (FeedBackController) , Roether 1987
+  
+ Prozessbezeichnung:Druckregelung ZWS Flensburg   
+ Bezeichn. Antwort :Dampfdruck                    
+ Bezeichn. Anregung:Kohlemenge                    
+ Physikal.Einheiten:s   bar t/h 
+ Integralanteil    ?N
+ Sprunganregung    ?J
+ Prozeá sprungf„hig?N
+ Anzahl Wertetripel:    7
+  
+   Zeitmarke         Prozessantwort    Prozessanregung
+   Anfangswerte  :   90.0000    bar    14.2800    t/h 
+   .000000    s      90.0000    bar    13.6700    t/h 
+   212.000    s      90.0000    bar    13.6700    t/h 
+   515.000    s      89.0000    bar    13.6700    t/h 
+   909.000    s      88.0000    bar    13.6700    t/h 
+   1591.00    s      87.0000    bar    13.6700    t/h 
+   2576.00    s      86.5000    bar    13.6700    t/h 
+   3000.00    s      86.4000    bar    13.6700    t/h 
+   Endwerte      :   86.2500    bar    13.6700    t/h 
+  
+ Gleichwertanteil  :   2.21311     bar 
+ Verstaerkung      :   6.14754     bar  / t/h 
+  
+ Zeitdiskretes Prozessmodell:           
+ Anzahl Punkte     :   61
+ Abtastzeit        :   50.0000    s   
+ Totzeiten         :    4
+ Prozessordnung    :    3
+ Fehler LS-Sch„tzg.:   .852115E-01
+ Z-Uebertragungskoeffizienten B(z)/A(z):
+ Polynom-Position    Zaehler B(i)      Nenner A(i)    
+ Koeffizient Nr. 1   .00000000         1.0000000      
+ Koeffizient Nr. 2   .36018437E-01    -1.8199281      
+ Koeffizient Nr. 3   .81237430E-01     1.1859027      
+ Koeffizient Nr. 4   .49374612E-01    -.33886936      
+  
+ Reglerkenngroessen:                    
+ KP:   .2354     TN:   1096.    s    TV:   .0000    s    T1:   .0000    s   
+ Stellgewichtung r :   .2000    
+  
+ Parameter der Minimierungsprozedur:    
+   .1000E-06   .1000E-02   .1000E-02   .1000E-01   .2000       .5000E-01
+ Max. Optim.-Stufen:   10
+ Ausgabeoption     :    1

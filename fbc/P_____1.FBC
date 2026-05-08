@@ -1,0 +1,44 @@
+ FBC (FeedBackController) , Roether 1987
+  
+ Prozessbezeichnung:Einfache Testfunktion         
+ Bezeichn. Antwort :Prozess-Ausgang               
+ Bezeichn. Anregung:Prozess-Eingang               
+ Physikal.Einheiten:min VoltVolt
+ Integralanteil    ?N
+ Sprunganregung    ?J
+ Prozeá sprungf„hig?N
+ Anzahl Wertetripel:    4
+  
+   Zeitmarke         Prozessantwort    Prozessanregung
+   Anfangswerte  :   .000000    Volt   .000000    Volt
+   .000000    min    .000000    Volt   1.00000    Volt
+   2.00000    min    .400000    Volt   1.00000    Volt
+   5.00000    min    .800000    Volt   1.00000    Volt
+   10.0000    min    .950000    Volt   1.00000    Volt
+   Endwerte      :   1.00000    Volt   1.00000    Volt
+  
+ Gleichwertanteil  :   .599520E-14 Volt
+ Verstaerkung      :   1.00000     Volt / Volt
+  
+ Zeitdiskretes Prozessmodell:           
+ Anzahl Punkte     :   61
+ Abtastzeit        :   .166667    min 
+ Totzeiten         :    0
+ Prozessordnung    :    3
+ Fehler LS-Sch„tzg.:   .184264E-01
+ Z-Uebertragungskoeffizienten B(z)/A(z):
+ Polynom-Position    Zaehler B(i)      Nenner A(i)    
+ Koeffizient Nr. 1   .00000000         1.0000000      
+ Koeffizient Nr. 2   .33333333E-01    -1.7918416      
+ Koeffizient Nr. 3  -.26394721E-01     .84097513      
+ Koeffizient Nr. 4   .28479956E-02    -.39346883E-01  
+  
+ Reglerkenngroessen:                    
+ KR:   2.821     TI:   3.940    min  TD:   .0000    min  T1:   .0000    min 
+ Stellgewichtung R :   .1000    
+  
+ Parameter der Minimierungsprozedur:    
+   .1000E-06   .1000E-02   .1000E-02   .1000E-01   .2000       .5000E-01
+ Max. Optim.-Stufen:   10
+ Ausgabeoption     :    1
+

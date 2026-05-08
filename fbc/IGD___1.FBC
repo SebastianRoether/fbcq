@@ -1,0 +1,46 @@
+ FBC (FeedBackController) , Roether 1987
+  
+ Prozessbezeichnung:Tankniveau-Regelung           
+ Bezeichn. Antwort :Niveau der FlÅssigkeit        
+ Bezeichn. Anregung:Ventilhahn Tankablauf         
+ Physikal.Einheiten:min cm  l/s 
+ Integralanteil    ?J
+ Sprunganregung    ?J
+ Proze· sprungfÑhig?N
+ Anzahl Wertetripel:    6
+  
+   Zeitmarke         Prozessantwort    Prozessanregung
+   Anfangswerte  :   1.00000    cm     3.00000    l/s 
+   .000000    min    1.00000    cm     4.00000    l/s 
+   1.00000    min    1.00000    cm     4.00000    l/s 
+   2.00000    min    .000000    cm     4.00000    l/s 
+   4.00000    min   -2.00000    cm     4.00000    l/s 
+   8.00000    min   -6.00000    cm     4.00000    l/s 
+   10.0000    min   -8.00000    cm     4.00000    l/s 
+   Endwerte      :  -8.00000    cm     4.00000    l/s 
+  
+ Komp. Gleichanteil:  -3.04980     cm   / min 
+ Integrationsbeiw. :  -1.01660     cm   / l/s *min 
+  
+ Zeitdiskretes Prozessmodell:           
+ Anzahl Punkte     :   61
+ Abtastzeit        :   .166667    min 
+ Totzeiten         :    6
+ Prozessordnung    :    3
+ Fehler LS-SchÑtzg.:   .733526E-01
+ Z-Uebertragungskoeffizienten B(z)/A(z):
+ Polynom-Position    Zaehler B(i)      Nenner A(i)    
+ Koeffizient Nr. 1   .00000000         1.0000000      
+ Koeffizient Nr. 2  -.39351852E-01    -1.8731754      
+ Koeffizient Nr. 3  -.35083376E-01     1.2608460      
+ Koeffizient Nr. 4  -.12737391E-01    -.38767067      
+  
+ Reglerkenngroessen:                    
+ KR:  -.4459     TI:   .0000    min  TD:   .2247    min  T1:   .0000    min 
+ Stellgewichtung R :   .5000    
+  
+ Parameter der Minimierungsprozedur:    
+   .1000E-06   .1000E-02   .1000E-02   .1000E-01   .2000       .5000E-01
+ Max. Optim.-Stufen:   10
+ Ausgabeoption     :    1
+

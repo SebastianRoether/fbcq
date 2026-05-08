@@ -1,0 +1,48 @@
+ FBC (FeedBackController) , Roether 1987
+  
+ Prozessbezeichnung:Tiefpaá-Prozeá mit Totzeit    
+ Bezeichn. Antwort :Prozeá-Ausgang                
+ Bezeichn. Anregung:Prozeá-Eingang                
+ Physikal.Einheiten:s   %   bar 
+ Integralanteil    ?N
+ Sprunganregung    ?J
+ Prozeá sprungf„hig?N
+ Anzahl Wertetripel:    9
+  
+   Zeitmarke         Prozessantwort    Prozessanregung
+   Anfangswerte  :   12.9620    %      3.50000    bar 
+   .000000    s      12.9620    %      3.00000    bar 
+   16.0000    s      12.9620    %      3.00000    bar 
+   20.0000    s      12.9780    %      3.00000    bar 
+   26.0000    s      13.0070    %      3.00000    bar 
+   40.0000    s      13.0900    %      3.00000    bar 
+   68.0000    s      13.2600    %      3.00000    bar 
+   82.0000    s      13.3450    %      3.00000    bar 
+   92.0000    s      13.3980    %      3.00000    bar 
+   114.000    s      13.4180    %      3.00000    bar 
+   Endwerte      :   13.4180    %      3.00000    bar 
+  
+ Gleichwertanteil  :   16.1540     %   
+ Verstaerkung      :  -.912000     %    / bar 
+  
+ Zeitdiskretes Prozessmodell:           
+ Anzahl Punkte     :   61
+ Abtastzeit        :   1.90000    s   
+ Totzeiten         :    8
+ Prozessordnung    :    3
+ Fehler LS-Sch„tzg.:   .563647E-02
+ Z-Uebertragungskoeffizienten B(z)/A(z):
+ Polynom-Position    Zaehler B(i)      Nenner A(i)    
+ Koeffizient Nr. 1   .00000000         1.0000000      
+ Koeffizient Nr. 2  -.33624175E-02    -2.2026454      
+ Koeffizient Nr. 3  -.96485130E-02     1.4634160      
+ Koeffizient Nr. 4   .11262066E-01    -.25885306      
+  
+ Reglerkenngroessen:                    
+ KP:  -1.009     TN:   37.32    s    TV:   16.96    s    T1:   10.32    s   
+ Stellgewichtung r :   .2000    
+  
+ Parameter der Minimierungsprozedur:    
+   .1000E-06   .1000E-02   .1000E-02   .1000E-01   .2000       .5000E-01
+ Max. Optim.-Stufen:   10
+ Ausgabeoption     :    3

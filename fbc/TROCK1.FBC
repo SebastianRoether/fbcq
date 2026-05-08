@@ -1,0 +1,48 @@
+ FBC (FeedBackController) , Roether 1987
+  
+ Prozessbezeichnung:Trockner                      
+ Bezeichn. Antwort :Sollwert Druckregler          
+ Bezeichn. Anregung:Ausgangsfeuchte               
+ Physikal.Einheiten:s   %   bar 
+ Integralanteil    ?N
+ Sprunganregung    ?J
+ Prozeá sprungf„hig?N
+ Anzahl Wertetripel:    9
+  
+   Zeitmarke         Prozessantwort    Prozessanregung
+   Anfangswerte  :   25.0000    %      4.00000    bar 
+   .000000    s      25.0000    %      6.00000    bar 
+   20.0000    s      25.0000    %      6.00000    bar 
+   26.0000    s      25.0000    %      6.00000    bar 
+   40.0000    s      23.0000    %      6.00000    bar 
+   60.0000    s      19.5000    %      6.00000    bar 
+   80.0000    s      15.0000    %      6.00000    bar 
+   100.000    s      12.0000    %      6.00000    bar 
+   120.000    s      11.0000    %      6.00000    bar 
+   140.000    s      10.5000    %      6.00000    bar 
+   Endwerte      :   10.5000    %      6.00000    bar 
+  
+ Gleichwertanteil  :   54.0000     %   
+ Verstaerkung      :  -7.25000     %    / bar 
+  
+ Zeitdiskretes Prozessmodell:           
+ Anzahl Punkte     :   61
+ Abtastzeit        :   2.33333    s   
+ Totzeiten         :   11
+ Prozessordnung    :    3
+ Fehler LS-Sch„tzg.:   .249255    
+ Z-Uebertragungskoeffizienten B(z)/A(z):
+ Polynom-Position    Zaehler B(i)      Nenner A(i)    
+ Koeffizient Nr. 1   .00000000         1.0000000      
+ Koeffizient Nr. 2  -.29914761E-01    -2.1345148      
+ Koeffizient Nr. 3  -.37987216E-01     1.3904932      
+ Koeffizient Nr. 4   .28337403E-01    -.25052116      
+  
+ Reglerkenngroessen:                    
+ KP:  -.1085     TN:   40.96    s    TV:   21.08    s    T1:   7.729    s   
+ Stellgewichtung r :   .2000    
+  
+ Parameter der Minimierungsprozedur:    
+   .1000E-06   .1000E-02   .1000E-02   .1000E-01   .2000       .5000E-01
+ Max. Optim.-Stufen:   10
+ Ausgabeoption     :    1

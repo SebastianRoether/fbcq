@@ -1,0 +1,1018 @@
+ 
+
+                                                                        PAGE   1
+                                                                        04-24-99
+                                                                        16:59:35
+
+  Line#  Source Line          Microsoft FORTRAN Optimizing Compiler Version 4.00
+
+      1  $DEBUG
+      2  $STORAGE:2
+      3  c     Unterprogrammsammlung FBCCOMM.FOR
+      4  c
+      5  c     Kommunikationsprogramme fuer Programm FBC (FeedBackController)
+      6  c     Roether,1987
+      7  c
+      8  c
+      9  c
+     10        subroutine diskio(cbez,ctyu,ci,cs,cd,yanf,uanf,len,t,y,u,
+     11       *yend,uend,pglw,pver,nk,n,id,a,b,rho,q,r,dopt,kmax,nou,job,if)
+     12  c
+     13  c     Zweck: Transfer der Datenbank zwischen Speichermedium und
+     14  c     dem Programm fbc (Reglerparameteroptimierung)
+     15  c
+     16  c     Eingabeparameter:
+     17  c     job   - 0:Lese Datenfile, 1:Schreibe Datenfile
+     18  c     nou   - Ausgabeeinheit fuer Systemmeldungen
+     19  c     kmax  - Maximalanzahl von Minimierungsschritten (Optimierung)
+     20  c     dopt  - Optimierungsparametervektor (Optimierung)
+     21  c     r     - Gewichtungsfaktor des ITAE-Kriteriums
+     22  c     q     - Vektor mit Regelparametern
+     23  c     rho   - Identifikations-Fehler
+     24  c     b     - Koeffizientenvektor fuer Zaehlerpolynom Strecke
+     25  c     a     - Koeffizientenvektor fuer Nennerpolynom Strecke
+     26  c     id    - Totzeit Strecke
+     27  c     n     - Systemordnung
+     28  c     nk    - Anzahl der aequidistanten interpolierten Kurvenwerte
+     29  c     pver  - Prozessverstaerkung
+     30  c     pglw  - Prozessgleichwert y0
+     31  c     uend  - Endwert der Stellerregung
+     32  c     yend  - Endwert der Systemantwort
+     33  c     u     - Vektor mit gemessenen Stellwerten
+     34  c     y     - Vektor mit gemessenen Prozesswerten
+     35  c     t     - Vektor mit abgelesenen Relativzeiten
+     36  c     len   - Anzahl der eingelesenen Stuetzstellen
+     37  c     uanf  - Anfangswert der Stellerregung
+     38  c     yanf  - Anfangswert der Systemantwort
+     39  c     cd    - Character-Wert (Indiziert sprungfaehige Strecke)
+     40  c     cs    - Character-Wert (Indiziert sprungfoermige Erregung)
+     41  c     ci    - Character-Wert (Indiziert integrierendes Verhalten)
+     42  c     ctyu  - Character-Vektor mit physikalisBhen Bezeichnungen
+     43  c     cbez  - Vektor mit Bezeichnungen
+     44  c
+     45  c     Autor:Friedemann Roether
+     46  c     Letzte Aenderung: 19.05.1987
+     47  c
+     48        implicit real*8 (a-h,o-z)
+     49        dimension t(len),u(len),y(len),a(*),b(*),q(4),dopt(6)
+     50        character*20 cdum,name
+     51        character*4 ctyu(3),cdu4
+     52        character*1 ci,cs,cd
+     53        character*2 blank,bldum
+     54        logical ex
+     55        character*30 cbez(3)
+     56        character*40 kopf,kopfz
+ 
+
+                                                                        PAGE   2
+                                                                        04-24-99
+                                                                        16:59:35
+
+  Line#  Source Line          Microsoft FORTRAN Optimizing Compiler Version 4.00
+
+     57        character*16 cdu16
+     58        data kopfz/' FBC (FeedBackController) , Roether 1987'/
+     59        data blank/'  '/
+     60        data nds/8/
+     61        if=0
+     62        n1=n+1
+     63        dt=(t(len)-t(1))/(nk-1)
+     64  c
+     65  c     File-Definition
+     66  c
+     67   100  continue
+     68        name='                    '
+     69        write(*,110)
+     70   110  format(/17x,' Name des Datenfiles :'\)
+     71        read(*,'(a20)',err=100) name
+     72  c
+     73  c     Ueberpruefe und ergaenze eingegebenen Namen
+     74  c
+     75        do 115 i=1,16
+     76           if(name(i:i).eq.' '.or.name(i:i).eq.'.') then
+     77              nfbc=i
+     78              go to 120
+     79           end if
+     80   115  continue
+     81        nfbc=17
+     82   120  continue
+     83        if(nfbc.le.1) go to 1000
+     84        if(name(1:3).eq.'con'.or.name(1:3).eq.'prn'
+     85       *.or.name(1:3).eq.'CON'.or.name(1:3).eq.'PRN'.and.
+     86       *(name(4:4).eq.' '.or.name(4:4).eq.':')) then
+     87           if(job.ne.1) go to 100
+     88           name(4:20)=':                '
+     89           ex=.false.
+     90           go to 125
+     91        end if
+     92        name(nfbc:nfbc+3)='.fbc'
+     93        nend=nfbc+4
+     94        if(nend.le.20) then
+     95           do 123 i=nend,20
+     96              name(i:i)=' '
+     97   123     continue
+     98        end if
+     99        inquire(file=name,exist=ex)
+    100   125  continue
+    101        if(.not.ex) then
+    102           if(name(4:4).ne.':') write(*,130) name
+    103   130     format(17x,' Bisher kein File: ',a20,' vorhanden.')
+    104           if(job.eq.0) go to 100
+    105           open(nds,file=name,status='new',form='formatted')
+    106        else
+    107           open(nds,file=name,status='old',form='formatted')
+    108        end if
+    109        if(name(4:4).ne.':') rewind nds
+    110        if(ex) then
+    111           read(nds,'(a40)',err=999) kopf
+    112           if(kopf.ne.kopfz) then
+ 
+
+                                                                        PAGE   3
+                                                                        04-24-99
+                                                                        16:59:35
+
+  Line#  Source Line          Microsoft FORTRAN Optimizing Compiler Version 4.00
+
+    113              write(*,140)
+    114   140        format(17x,' Kein FBC-Datenfile!')
+    115              close(nds)
+    116              go to 100
+    117           end if
+    118        else
+    119           write(nds,'(a40)') kopfz
+    120        end if
+    121  c
+    122  c     Beginne mit Datentransfer
+    123  c     1. Prozesscharakteristika und Messdaten
+    124  c
+    125        if(job.eq.0) then
+    126           read (nds,'(a2)',err=999) bldum
+    127           read (nds,'(a20,a30)',err=999) cdum,cbez(1)
+    128           read (nds,'(a20,a30)',err=999) cdum,cbez(2)
+    129           read (nds,'(a20,a30)',err=999) cdum,cbez(3)
+    130           read (nds,'(a20,3a4)',err=999) cdum,(ctyu(i),i=1,3)
+    131           read (nds,'(a20,a1 )',err=999) cdum,ci
+    132           read (nds,'(a20,a1 )',err=999) cdum,cs
+    133           read (nds,'(a20,a1 )',err=999) cdum,cd
+    134           read (nds,'(a20,i5)',err=999) cdum,len
+    135           read (nds,'(a2)',err=999) bldum
+    136           read (nds,'(a40)',err=999) kopf
+    137           read (nds,'(a18,2(g14.6,a4))',err=999) cdum,yanf,cdu4,uanf,cdu
+    138        else
+    139           write(nds,'(a2)') blank
+    140           write(nds,'(a20,a30)') ' Prozessbezeichnung:',cbez(1)
+    141           write(nds,'(a20,a30)') ' Bezeichn. Antwort :',cbez(2)
+    142           write(nds,'(a20,a30)') ' Bezeichn. Anregung:',cbez(3)
+    143           write(nds,'(a20,3a4)') ' Physikal.Einheiten:',(ctyu(i),i=1,3)
+    144           write(nds,'(a20,a1 )') ' Integralanteil    ?',ci
+    145           write(nds,'(a20,a1 )') ' Sprunganregung    ?',cs
+    146           write(nds,'(a20,a1 )') ' Proze· sprungfÑhig?',cd
+    147           write(nds,'(a20,i5)')  ' Anzahl Wertetripel:',len
+    148           write(nds,'(a2)') blank
+    149           write(nds,'(3a18)')'   Zeitmarke      ','   Prozessantwort ',
+    150       *   '   Prozessanregung'
+    151           write(nds,'(a18,2(g14.6,a4))') '   Anfangswerte  :',
+    152       *   yanf,ctyu(2),uanf,ctyu(3)
+    153        end if
+    154        do 200 i=1,len
+    155           if(job.eq.0) then
+    156              read(nds,'(3(g14.6,a4))',err=999) t(i),cdu4,y(i),cdu4,u(i),
+    157       *      cdu4
+    158           else
+    159              write(nds,'(3(g14.6,a4))') t(i),ctyu(1),y(i),ctyu(2),u(i),
+    160       *   ctyu(3)
+    161           end if
+    162   200  continue
+    163        if(job.eq.0) then
+    164           read(nds,'(a18,2(g14.6,a4))',err=999) cdum,yend,cdu4,uend,cdu4
+    165           read(nds,'(a2)',err=999) bldum
+    166           read(nds,'(a20,g14.6)', err=999) cdum,pglw
+    167           read(nds,'(a20,g14.6)', err=999) cdum,pver
+    168        else
+ 
+
+                                                                        PAGE   4
+                                                                        04-24-99
+                                                                        16:59:35
+
+  Line#  Source Line          Microsoft FORTRAN Optimizing Compiler Version 4.00
+
+    169           write(nds,'(a18,2(g14.6,a4))') '   Endwerte      :',
+    170       *   yend,ctyu(2),uend,ctyu(3)
+    171           write(nds,'(a2)') blank
+    172           if(ci.ne.'J') then
+    173              write(nds,'(a20,g14.6,a1,a4)')
+    174       *    ' Gleichwertanteil  :',pglw,' ',ctyu(2)
+    175              write(nds,'(a20,g14.6,a1,a4,a3,a4)')
+    176       *    ' Verstaerkung      :',pver,' ',ctyu(2),' / ',ctyu(3)
+    177           else
+    178              write(nds,'(a20,g14.6,a1,a4,a3,a4)')
+    179       *    ' Komp. Gleichanteil:',pglw,' ',ctyu(2),' / ',ctyu(1)
+    180              write(nds,'(a20,g14.6,a1,a4,a3,a4,a1,a4)')
+    181       * ' Integrationsbeiw. :',pver,' ',ctyu(2),' / ',ctyu(3),'*',ctyu(1
+    182           end if
+    183        end if
+    184        if(name(1:4).eq.'con:'.or.name(1:4).eq.'CON:') then
+    185           write(nds,'(a2)') blank
+    186           call rtwait
+    187        end if
+    188  c
+    189  c     2. Modelldaten
+    190  c
+    191        if(job.eq.0) then
+    192           read(nds,'(a2)') bldum
+    193           read(nds,'(a40)') kopf
+    194           read(nds,'(a20,i5)',   err=999) cdum,nk
+    195           read(nds,'(a20,g14.6)',err=999) cdum,dtt
+    196           read(nds,'(a20,i5)',   err=999) cdum,id
+    197           read(nds,'(a20,i5)',   err=999) cdum,n
+    198           read(nds,'(a20,g14.6)',err=999) cdum,rho
+    199           read(nds,'(a40)') kopf
+    200           read(nds,'(a40)') kopf
+    201           n1=n+1
+    202        else
+    203           write(nds,'(a2)') blank
+    204           write(nds,'(a40)')   ' Zeitdiskretes Prozessmodell:           
+    205           write(nds,'(a20,i5)')    ' Anzahl Punkte     :',nk
+    206           write(nds,'(a20,g14.6,a4)') ' Abtastzeit        :',dt,ctyu(1)
+    207           write(nds,'(a20,i5)')    ' Totzeiten         :',id
+    208           write(nds,'(a20,i5)')    ' Prozessordnung    :',n
+    209           write(nds,'(a20,g14.6)') ' Fehler LS-SchÑtzg.:',rho
+    210           write(nds,'(a40)') ' Z-Uebertragungskoeffizienten B(z)/A(z):'
+    211           write(nds,'(3a18)')' Polynom-Position ','   Zaehler B(i)   ',
+    212       *   '   Nenner A(i)    '
+    213        end if
+    214        do 300 i=1,n1
+    215           if(job.eq.0) then
+    216              read(nds,'(a16,i2,2(g16.8,a2))',err=310) cdu16,bldum,
+    217       *      b(i),bldum,a(i),bldum
+    218           else
+    219              write(nds,'(a16,i2,2(g16.8,a2))') ' Koeffizient Nr.',i,
+    220       *      b(i),blank,a(i),blank
+    221           end if
+    222   300  continue
+    223        ierr=0
+    224        go to 320
+ 
+
+                                                                        PAGE   5
+                                                                        04-24-99
+                                                                        16:59:35
+
+  Line#  Source Line          Microsoft FORTRAN Optimizing Compiler Version 4.00
+
+    225   310  continue
+    226        ierr=1
+    227   320  continue
+    228  c
+    229  c     3. Reglerdaten
+    230  c
+    231        if(job.eq.0) then
+    232           if(ierr.ne.1) read(nds,'(a2)',err=999) bldum
+    233           read(nds,'(a40)',err=999) kopf
+    234           read(nds,'(a4,g12.4,3(a4,g12.4,a4))',err=999)
+    235       *   cdu4,q(1),cdu4,q(2),cdu4,cdu4,q(3),cdu4,cdu4,q(4),cdu4
+    236           read(nds,'(a20,g12.4)',err=999) cdum,r
+    237        else
+    238           write(nds,'(a2)') blank
+    239           write(nds,'(a40)') ' Reglerkenngroessen:                    '
+    240           write(nds,'(a4,g12.4,3(a4,g12.4,a4))')
+    241       *   ' KP:',q(1),' TN:',q(2),ctyu(1),' TV:',q(3),ctyu(1),' T1:',
+    242       *   q(4),ctyu(1)
+    243           write(nds,'(a20,g12.4)') ' Stellgewichtung r :',r
+    244        end if
+    245  c
+    246  c     4. Optimierungsparameter
+    247  c
+    248        if(job.eq.0) then
+    249           read(nds,'(a2)') bldum
+    250           read(nds,'(a40)',err=999) kopf
+    251           read(nds,'(6g12.4)',err=999) (dopt(i),i=1,6)
+    252           read(nds,'(a20,i5)',   err=999) cdum,kmax
+    253           read(nds,'(a20,i5)',   err=999) cdum,nou
+    254        else
+    255           write(nds,'(a2)') blank
+    256           write(nds,'(a40)') ' Parameter der Minimierungsprozedur:    '
+    257           write(nds,'(6g12.4)') (dopt(i),i=1,6)
+    258           write(nds,'(a20,i5)')    ' Max. Optim.-Stufen:',kmax
+    259           write(nds,'(a20,i5)')    ' Ausgabeoption     :',nou
+    260        end if
+    261        close(nds,status='keep')
+    262        if(name(1:4).eq.'con:'.or.name(1:4).eq.'CON:') call rtwait
+    263   900  continue
+    264        return
+    265   999  call pause(' Lesefehler!')
+    266   1000 if=1
+    267        return
+    268        end
+
+
+DISKIO  Local Symbols
+
+Name                      Class   Type              Size   Offset  
+
+IF. . . . . . . . . . . . param                             0006
+JOB . . . . . . . . . . . param                             000a
+NOU . . . . . . . . . . . param                             000e
+KMAX. . . . . . . . . . . param                             0012
+DOPT. . . . . . . . . . . param                             0016
+R . . . . . . . . . . . . param                             001a
+ 
+
+                                                                        PAGE   6
+                                                                        04-24-99
+                                                                        16:59:35
+
+                              Microsoft FORTRAN Optimizing Compiler Version 4.00
+
+
+DISKIO  Local Symbols
+
+Name                      Class   Type              Size   Offset  
+
+Q . . . . . . . . . . . . param                             001e
+RHO . . . . . . . . . . . param                             0022
+B . . . . . . . . . . . . param                             0026
+A . . . . . . . . . . . . param                             002a
+ID. . . . . . . . . . . . param                             002e
+N . . . . . . . . . . . . param                             0032
+NK. . . . . . . . . . . . param                             0036
+PVER. . . . . . . . . . . param                             003a
+PGLW. . . . . . . . . . . param                             003e
+UEND. . . . . . . . . . . param                             0042
+YEND. . . . . . . . . . . param                             0046
+U . . . . . . . . . . . . param                             004a
+Y . . . . . . . . . . . . param                             004e
+T . . . . . . . . . . . . param                             0052
+LEN . . . . . . . . . . . param                             0056
+UANF. . . . . . . . . . . param                             005a
+YANF. . . . . . . . . . . param                             005e
+CD. . . . . . . . . . . . param                             0062
+CS. . . . . . . . . . . . param                             0066
+CI. . . . . . . . . . . . param                             006a
+CTYU. . . . . . . . . . . param                             006e
+CBEZ. . . . . . . . . . . param                             0072
+__V52 . . . . . . . . . . param                             ffb4
+__V53 . . . . . . . . . . param                             ffb6
+__V54 . . . . . . . . . . param                             ffb8
+CDU16 . . . . . . . . . . local   CHAR*16             16    0002
+I . . . . . . . . . . . . local   INTEGER*2            2    0012
+CDU4. . . . . . . . . . . local   CHAR*4               4    0014
+DT. . . . . . . . . . . . local   REAL*8               8    0018
+NFBC. . . . . . . . . . . local   INTEGER*2            2    0020
+EX. . . . . . . . . . . . local   LOGICAL*2            2    0022
+NAME. . . . . . . . . . . local   CHAR*20             20    0024
+NEND. . . . . . . . . . . local   INTEGER*2            2    0038
+CDUM. . . . . . . . . . . local   CHAR*20             20    003a
+DTT . . . . . . . . . . . local   REAL*8               8    004e
+KOPF. . . . . . . . . . . local   CHAR*40             40    0056
+IERR. . . . . . . . . . . local   INTEGER*2            2    007e
+BLDUM . . . . . . . . . . local   CHAR*2               2    0080
+N1. . . . . . . . . . . . local   INTEGER*2            2    0082
+KOPFZ . . . . . . . . . . local   CHAR*40             40    0354
+BLANK . . . . . . . . . . local   CHAR*2               2    037c
+NDS . . . . . . . . . . . local   INTEGER*2            2    037e
+
+    269  c
+    270  c
+    271  c
+    272        subroutine cinput(charac,cha)
+    273  c
+    274  c     Zweck: Handeingabe einer Sequenz aus 4 Zeichen
+    275  c
+    276  c     Eingabe:
+ 
+
+                                                                        PAGE   7
+                                                                        04-24-99
+                                                                        16:59:35
+
+  Line#  Source Line          Microsoft FORTRAN Optimizing Compiler Version 4.00
+
+    277  c     charac - Bezeichnung (35Zeichen)
+    278  c     cha    - Bisherige Zeichenkette
+    279  c
+    280  c     Ausgabe:
+    281  c     cha    - Neue Zeichenkette
+    282  c
+    283  c     Autor:Friedemann Roether
+    284  c     Letzte Aenderung:15.05.1987
+    285  c
+    286        character*35 charac
+    287        character*4 cha,cdum
+    288    10  continue
+    289        write(*,'(a35,a1,a4,a2\)') charac,'(',cha,')?'
+    290        read(*,'(a4)',err=10) cdum
+    291        call lclear
+    292        if(cdum.ne.'   ') then
+    293           cha=cdum
+    294           go to 10
+    295        end if
+    296        write(*,'(a35,a1,a4)')  charac,':',cha
+    297        return
+    298        end
+
+
+CINPUT  Local Symbols
+
+Name                      Class   Type              Size   Offset  
+
+CHA . . . . . . . . . . . param                             0006
+CHARAC. . . . . . . . . . param                             000a
+CDUM. . . . . . . . . . . local   CHAR*4               4    0084
+
+    299  c
+    300  c
+    301  c
+    302        subroutine rinput(charac,cpval,wert,job)
+    303  c
+    304  c     Zweck:Handeingabe einer Real-Zahl. Ist sie verschieden von Null,
+    305  c     dann wird sie dem eingelesenen Wert zugewiesen.
+    306  c
+    307  c     Eingabe:
+    308  c     charac  - Character-Bezeichnung (30 Zeichen)
+    309  c     cpval   - Physikalische Bezeichnung (4 Zeichen)
+    310  c     wert    - Bisheriger Wert
+    311  c     job     - 0: Keine Werte kleiner Null werden eingelesen
+    312  c
+    313  c     Ausgabe:
+    314  c     wert    - Neuer Wert
+    315  c
+    316  c     Autor: Friedemann Roether
+    317  c     Letzte Aenderung: 25.05.1987
+    318  c
+    319        real*8 wert,wert1,wert2
+    320        character*30 charac
+    321        character*4 cpval
+    322        character*1 c
+ 
+
+                                                                        PAGE   8
+                                                                        04-24-99
+                                                                        16:59:35
+
+  Line#  Source Line          Microsoft FORTRAN Optimizing Compiler Version 4.00
+
+    323   10   continue
+    324        wert2=wert
+    325        write(*,'(a1,a30,a1,a4,a5,f10.4,a2\)') ' ',charac,' ',cpval,
+    326       *')   (',wert,'):'
+    327        read(*,'(g18.10)',err=20) wert1
+    328        go to 30
+    329   20   continue
+    330        c='J'
+    331        call cisdin('Wert behalten <J> oder zu Null setzen <N> (J/N)',c)
+    332        if(c.eq.'N') wert=0.d00
+    333        call lclear
+    334        go to 40
+    335   30   continue
+    336        if(wert1.ne.0.d0) then
+    337         wert=wert1
+    338         if(dabs(wert).lt.1.d-5.and.wert.ne.0.d00) wert=dnint(1.d10*wert)
+    339         if(job.eq.0.and.wert1.lt.0.d00) wert=0.d00
+    340        end if
+    341   40   continue
+    342        call lclear
+    343        if(wert2.ne.wert) go to 10
+    344        write(*,'(a1,a30,a1,a4,a5,f10.4)') ' ',charac,' ',cpval,
+    345       *'):   ',wert
+    346        return
+    347        end
+
+
+RINPUT  Local Symbols
+
+Name                      Class   Type              Size   Offset  
+
+JOB . . . . . . . . . . . param                             0006
+WERT. . . . . . . . . . . param                             000a
+CPVAL . . . . . . . . . . param                             000e
+CHARAC. . . . . . . . . . param                             0012
+C . . . . . . . . . . . . local   CHAR*1               1    0088
+WERT1 . . . . . . . . . . local   REAL*8               8    008a
+WERT2 . . . . . . . . . . local   REAL*8               8    0092
+
+    348  c
+    349  c
+    350  c
+    351        subroutine cbnput(charac,cha)
+    352  c
+    353  c     Zweck: Eingabe einer laengeren Bezeichnung (30 Zeichen)
+    354  c
+    355  c     Eingabe:
+    356  c     charac - Vorspann
+    357  c     cha    - Bisheriger Textstring
+    358  c
+    359  c     Ausgabe:
+    360  c     cha    - Neuer Textstring
+    361  c
+    362  c     Autor: Friedemann Roether
+    363  c     Letzte Aenderung:15.05.1987
+    364  c
+ 
+
+                                                                        PAGE   9
+                                                                        04-24-99
+                                                                        16:59:35
+
+  Line#  Source Line          Microsoft FORTRAN Optimizing Compiler Version 4.00
+
+    365        character*17 charac
+    366        character*30 cha,cdum
+    367   10   continue
+    368        write(*,'(a17,a2,a30,a1\)') charac,': ',cha,'?'
+    369        read(*,'(a30)',err=10) cdum
+    370        call lclear
+    371        if(cdum(1:4).ne.'    ') then
+    372           cha=cdum
+    373           go to 10
+    374        end if
+    375        write(*,'(a17,a2,a30)') charac,': ',cha
+    376        return
+    377        end
+
+
+CBNPUT  Local Symbols
+
+Name                      Class   Type              Size   Offset  
+
+CHA . . . . . . . . . . . param                             0006
+CHARAC. . . . . . . . . . param                             000a
+CDUM. . . . . . . . . . . local   CHAR*30             30    009a
+
+    378  c
+    379  c
+    380  c
+    381        subroutine cisdin(text,c)
+    382  c
+    383  c     Zweck: Handeingabe einer Ja/Nein Antwort.
+    384  c
+    385  c     Eingabe:
+    386  c     text  - Ausgabetext (character*47)
+    387  c     c     - Bisheriger Character 'J' oder 'N'
+    388  c
+    389  c     Ausgabe:
+    390  c     c     - Neuer Character
+    391  c
+    392  c     Autor: Friedemann Roether
+    393  c     Letzte Aenderung:15.05.1987
+    394  c
+    395        character*47 text
+    396        character*1 c,ja
+    397   10   continue
+    398        write(*,'(a1,a47,a1,a1,a1\)') ' ',text,' ',c,'?'
+    399        read(*,'(a1)',err=10) ja
+    400        if(ja.eq.'j'.or.ja.eq.'J') c='J'
+    401        if(ja.eq.'n'.or.ja.eq.'N') c='N'
+    402        call lclear
+    403        write(*,'(a1,a47,a1,a1,a1)') ' ',text,'?',' ',c
+    404        return
+    405        end
+
+ 
+
+                                                                        PAGE  10
+                                                                        04-24-99
+                                                                        16:59:35
+
+                              Microsoft FORTRAN Optimizing Compiler Version 4.00
+
+CISDIN  Local Symbols
+
+Name                      Class   Type              Size   Offset  
+
+C . . . . . . . . . . . . param                             0006
+TEXT. . . . . . . . . . . param                             000a
+JA. . . . . . . . . . . . local   CHAR*1               1    00b8
+
+    406  c
+    407  c
+    408  c
+    409        subroutine lclear
+    410  c
+    411  c     Zweck: Loeschen der gerade beschriebenen Zeile und Positionieren
+    412  c     vor die Zeile
+    413  c
+    414  c     Autor:Friedemann Roether
+    415  c     Letzte Aenderung:12.06.87
+    416  c
+    417        write(*,'(1x,11a\)') char(27),'[1A',char(27),'[K',char(27),'[1A'
+    418        return
+    419        end
+    420  c
+    421        subroutine xyinpu(x,y,z,len,nki,ctyu)
+    422  c
+    423  c     Zweck: Eingabe gemessener Prozess-Wertetripel
+    424  c     Werte kînnen editiert, gelîscht und Åberschrieben werden.
+    425  c
+    426  c     Eingabe:
+    427  c     ctyu  - Character-Vektor (*4) mit physikalischen Einheiten
+    428  c     len   - Anzahl bisher eingegebener Wertetripel
+    429  c     nki   - Maximalanzahl der Wertetripel
+    430  c     x,y,z - Bisheriger Vektoren x(Zeit), y(Sprungantwort) und
+    431  c             z (Sprunganregung)
+    432  c
+    433  c     Ausgabe:
+    434  c     len   - Neue Wertetripel-Anzahl
+    435  c     x,y,z - Neue Vektoren
+    436  c
+    437  c     Autor: Friedemann Roether
+    438  c     Letzte Aenderung:15.05.1987
+    439  c
+    440        implicit real*8(a-h,o-z)
+    441        character*4 ctyu(3)
+    442  c
+    443  c     Zweck: Eingabe von len Datentripeln x(i),y(i),z(i)
+    444  c
+    445        dimension x(nki),y(nki),z(nki)
+    446  c
+    447        if(len.eq.0) go to 9
+    448        icnt=0
+    449  c
+    450  c     Ausgabe bisher eingelesener Wertetripel
+    451  c
+    452   2    continue
+    453        call adclr
+ 
+
+                                                                        PAGE  11
+                                                                        04-24-99
+                                                                        16:59:35
+
+  Line#  Source Line          Microsoft FORTRAN Optimizing Compiler Version 4.00
+
+    454        write(*,5)
+    455   5    format(' Ausgabe bisher eingelesener Wertetripel:')
+    456        do 7 i=1,len
+    457           write(*,8) i,x(i),ctyu(1),y(i),ctyu(2),z(i),ctyu(3)
+    458   8       format(1x,i3,' -tes Tripel:',3(G14.6,A4))
+    459   7    continue
+    460   9    continue
+    461        if(icnt.ne.1) write(*,30)
+    462   30   format(
+    463       *' Bitte Åbertragen Sie nun etwa 8 (mindestens 4 ) Wertetripel'/
+    464       *' (Relativzeit, Sprungantwort, Proze·eingangsgrî·e) mîglichst'/
+    465       *' exakt. Jedes Wertetripel ist durch Kommata zu trennen.     '/
+    466       *' Beispiel fÅr eine Eingabe: 40,2.45,1.333 <RETURN>'/)
+    467   40   continue
+    468        len1=len+1
+    469        if(len1.gt.nki) write(*,'(a31)') ' Max.Anz. Wertetripel erreicht.
+    470        write(*,50) len1
+    471   50   format(' ',i3,' -tes Tripel:'\)
+    472        read(*,60,err=40) time,sprant,sprung
+    473   60   format(3g18.10)
+    474        if(dabs(time).lt.1.d-5.and.time.ne.0.d00) time=time*1.d10
+    475        if(dabs(sprant).lt.1.d-5.and.sprant.ne.0.d00) sprant=sprant*1.d10
+    476        if(dabs(sprung).lt.1.d-5.and.sprung.ne.0.d00) sprung=sprung*1.d10
+    477        if(time.eq.0.d0.and.sprant.eq.0.d0.and.sprung.eq.0.d0) then
+    478           if(len.eq.0) then
+    479  c
+    480  c     Erstes eingegebenes Wertetripel
+    481  c
+    482              x(1)=0.d00
+    483              y(1)=0.d00
+    484              z(1)=0.d00
+    485              len=1
+    486              i=1
+    487              go to 40
+    488           else
+    489              icnt=icnt+1
+    490              if(icnt.eq.1) go to 2
+    491              if(icnt.eq.2) go to 999
+    492           end if
+    493        else
+    494           call lclear
+    495           write(*,8) len1,time,ctyu(1),sprant,ctyu(2),sprung,ctyu(3)
+    496        end if
+    497        icnt=0
+    498  c
+    499  c     Einsortieren der eingegebenen Werte
+    500  c
+    501        if(len.eq.0) then
+    502           len=1
+    503           i=1
+    504           go to 100
+    505        end if
+    506        do 70 i=1,len
+    507           if(sngl(x(i))-sngl(time)) 70,100,80
+    508   70   continue
+    509        if(len1.gt.nki) go to 2
+ 
+
+                                                                        PAGE  12
+                                                                        04-24-99
+                                                                        16:59:35
+
+  Line#  Source Line          Microsoft FORTRAN Optimizing Compiler Version 4.00
+
+    510  c
+    511  c     Neues Tripel ist letztes Tripel
+    512  c
+    513        len=len+1
+    514        i=len
+    515        go to 100
+    516  c
+    517  c     Werte nach Position i nach hinten verschieben
+    518  c
+    519   80   continue
+    520        if(len1.gt.nki) go to 2
+    521        i1=len-i+1
+    522        do 90 j=1,i1
+    523           j1=len-j+1
+    524           x(j1+1)=x(j1)
+    525           y(j1+1)=y(j1)
+    526           z(j1+1)=z(j1)
+    527   90   continue
+    528        len=len+1
+    529  c
+    530  c     Wert an Position i einsortieren
+    531  c
+    532   100  continue
+    533        if(sprung.ne.0.d0.or.sprant.ne.0.d0
+    534       *.or.sngl(x(i)).ne.sngl(time))  then
+    535           x(i)=time
+    536           y(i)=sprant
+    537           z(i)=sprung
+    538        else
+    539  c
+    540  c     Wert an Position i ausketten
+    541  c
+    542           i1=i
+    543           do 110 j=i1,len
+    544              x(j)=x(j+1)
+    545              y(j)=y(j+1)
+    546              z(j)=z(j+1)
+    547   110     continue
+    548           len=len-1
+    549        end if
+    550        go to 40
+    551   999  continue
+    552        return
+    553        end
+
+
+XYINPU  Local Symbols
+
+Name                      Class   Type              Size   Offset  
+
+CTYU. . . . . . . . . . . param                             0006
+NKI . . . . . . . . . . . param                             000a
+LEN . . . . . . . . . . . param                             000e
+Z . . . . . . . . . . . . param                             0012
+Y . . . . . . . . . . . . param                             0016
+X . . . . . . . . . . . . param                             001a
+ 
+
+                                                                        PAGE  13
+                                                                        04-24-99
+                                                                        16:59:35
+
+                              Microsoft FORTRAN Optimizing Compiler Version 4.00
+
+
+XYINPU  Local Symbols
+
+Name                      Class   Type              Size   Offset  
+
+__V561. . . . . . . . . . param                             fff8
+__V562. . . . . . . . . . param                             fffa
+__V563. . . . . . . . . . param                             fffc
+I . . . . . . . . . . . . local   INTEGER*2            2    00ba
+J . . . . . . . . . . . . local   INTEGER*2            2    00bc
+LEN1. . . . . . . . . . . local   INTEGER*2            2    00be
+SPRANT. . . . . . . . . . local   REAL*8               8    00c0
+SPRUNG. . . . . . . . . . local   REAL*8               8    00c8
+ICNT. . . . . . . . . . . local   INTEGER*2            2    00d0
+TIME. . . . . . . . . . . local   REAL*8               8    00d2
+I1. . . . . . . . . . . . local   INTEGER*2            2    00da
+J1. . . . . . . . . . . . local   INTEGER*2            2    00dc
+
+    554  c
+    555  c
+    556  c
+    557        subroutine pause(text)
+    558  c
+    559  c     Zweck: Blinkende Anzeige eines Meldetextes
+    560  c
+    561  c     Eingabeparameter:
+    562  c     text - Character-String bis zur Laenge 50
+    563  c
+    564  c     Eingabeparameter:
+    565  c     text - Character der Laenge max 50
+    566  c
+    567  c     Autor:Friedemann Roether
+    568  c     Letzte Aenderung: 15.05.1987
+    569  c
+    570        character*1 text(*)
+    571        do 10 i=1,50
+    572           if(text(i).eq.'!') go to 20
+    573   10   continue
+    574        go to 100
+    575   20   continue
+    576        i1=i-1
+    577        write(*,'(1x,4a\)') char(27),'[5m'
+    578        write(*,'(/a20\)') '                 ** '
+    579        do 30 i=1,i1
+    580           write(*,'(a1\)') text(i)
+    581   30   continue
+    582        write(*,'(a3,1x,4a\)') ' **',char(27),'[0m'
+    583  c
+    584  c     Pausenschleife
+    585  c
+    586        do 40 i=1,15000
+    587        do 35 j=1,2000   
+    588        k = i+1
+    589   35   continue
+    590   40   continue
+    591        write(*,'(1x,11a\)') char(27),'[1A',char(27),'[K',char(27),'[3A'
+ 
+
+                                                                        PAGE  14
+                                                                        04-24-99
+                                                                        16:59:35
+
+  Line#  Source Line          Microsoft FORTRAN Optimizing Compiler Version 4.00
+
+    592        call lclear
+    593   100  continue
+    594        return
+    595        end
+
+
+PAUSE  Local Symbols
+
+Name                      Class   Type              Size   Offset  
+
+TEXT. . . . . . . . . . . param                             0006
+I . . . . . . . . . . . . local   INTEGER*2            2    00de
+J . . . . . . . . . . . . local   INTEGER*2            2    00e0
+K . . . . . . . . . . . . local   INTEGER*2            2    00e2
+I1. . . . . . . . . . . . local   INTEGER*2            2    00e4
+
+    596  c
+    597  c
+    598  c
+    599        subroutine rtwait
+    600  c
+    601  c     Zweck: Warten auf Druecken der Return-Taste
+    602  c
+    603  c     Autor:Friedemann Roether
+    604  c     Letzte Aenderung: 15.05.1987
+    605  c
+    606        character*1 c
+    607        call cline(57,1,1)
+    608    5   write(*,10)
+    609   10   format('Weiter mit <RETURN>.'\)
+    610        read(*,20,err=5) c
+    611   20   format(A1)
+    612        return
+    613        end
+
+
+RTWAIT  Local Symbols
+
+Name                      Class   Type              Size   Offset  
+
+C . . . . . . . . . . . . local   CHAR*1               1    00e6
+
+    614  c
+    615  c
+    616  c
+    617        subroutine fbcint
+    618  c
+    619  c     Zweck: Ausgabe eines Bildschirmkommentars im Program fbc
+    620  c     Regelparameter-Optimierung
+    621  c
+    622  c     Eingabeparameter:
+    623  c     Keine
+    624  c
+    625  c     Ausgabeparameter:
+    626  c     Keine
+    627  c
+ 
+
+                                                                        PAGE  15
+                                                                        04-24-99
+                                                                        16:59:35
+
+  Line#  Source Line          Microsoft FORTRAN Optimizing Compiler Version 4.00
+
+    628  c     Autor: Friedemann Roether
+    629  c     Erste Version:   12.04.1987
+    630  c     Letzte Aenderung:15.05.1987
+    631  c
+    632        call adclr
+    633        write(*,10)
+    634   10   format(
+    635       *17x'Kurzanleitung FeedBackController (FBC)'//
+    636       *17x'Zweck:  FeedBackController ist ein Programm fÅr den rechner-'
+    637       *17x'gestÅtzten interaktiven Entwurf von PI/PD/PDT1/PID/PIDT1-Reg'
+    638       *17x'lern auf der Basis gemessener Sprungantwort-VerlÑufe. Es be-'
+    639       *17x'inhaltet stÅtzpunktorientierte Me·dateneingabe,Reglerentwurf'
+    640       *17x'und Regelparameter-Optimierungen am Proze·modell,  grafische'
+    641       *17x'Simulation und Archivierung der erzielten Ergebnisse.'//
+    642       *17x'Vorgehensweise:'//
+    643       *17x'1. Sprunganregung auf den interessierenden  Proze· bzw.  den'
+    644       *17x'   Sollwert eines vorhandenen Reglers aufbringen.Messung der'
+    645       *17x'   Stell- und der Regelgrî·e aufzeichnen (z.B. durch Proze·-'
+    646       *17x'   schreiber) und sorgfÑltig mit Funktion (1) Åbertragen.'//
+    647       *17x'2. Mit Funktion (2) prÅfen, ob das intern berechnete Proze·-'
+    648       *17x'   modell mit den gemessenen FunktionsverlÑufen harmoniert.'/
+    649       *17x'3. Vorbelegung eines Reglers mit Funktion (3). Merke:Zu Null'
+    650       *17x'   gesetzte Parameter werden weder bei  Simulation  noch bei'
+    651       *17x'   Optimierung berÅcksichtigt und geben damit die Regelstruk'
+    652        call rtwait
+    653        call adclr
+    654        write(*,20)
+    655   20   format(
+    656       *17x'   tur vor (PI-,PID-,etc.). Beliebige Parameter  kînnen  zur'
+    657       *17x'   Optimierung markiert werden - die restlichen,auch die von'
+    658       *17x'   Null verschiedenen Parameter bleiben konstant.'//
+    659       *17x'4. Grafische Simulation des geschlossenen Regelkreises   (4)'
+    660       *17x'   mit der aktuellen Regelstruktur. Dient zur Kontrolle  der'
+    661       *17x'   Startwerte bzw. der mit (5) erzielten Ergebnisse.'//
+    662       *17x'5. Funktion (5) initiiert die Parameteroptimierung im  Sinne'
+    663       *17x'   des quadratischen Integralkriteriums.Die Wahl der Gewich-'
+    664       *17x'   tung r (0-1) ergibt hart bis weich eingreifende Regler.'//
+    665       *17x'6. Ausgabe aller Proze·/Regelparameter auf  Schirm mit (6).'/
+    666       *17x'7. Ausgabe der internen Datenbasis wahlweise auf ein  Daten-'
+    667       *17x'   file, auf den Bildschirm ( con: ) oder den  Systemdrucker'
+    668       *17x'   ( prn: ) mit Funktion (7).'//
+    669       *17x'8. Einlesen einer externen Datenbasis mit (8).'//
+    670       *17x'9. Ausgabe dieser Kurzanleitung mit (9).'//
+    671       *17x'10.Programmabbruch.')
+    672        call rtwait
+    673        call adclr
+    674        write(*,25)
+    675   25   format(
+    676       *17x'Folgende Regelkreisstruktur wird zugrundegelegt:        '//
+    677       *17x'Soll-                  Stell                 ≥ Gleich   '/
+    678       *17x'wert w       ⁄ƒƒƒƒƒƒƒø grî·e y ⁄ƒƒƒƒƒƒƒƒø    ≥ wert x0  '/
+    679       *17x' ƒƒƒ>Oƒƒƒƒƒƒ>≥  GR   ≥ƒƒƒƒƒƒƒƒ>≥   GS   ≥ƒƒƒ>Oƒƒƒƒƒƒƒø  '/
+    680       *17x'   - ≥       ¿ƒƒƒƒƒƒƒŸ         ¿ƒƒƒƒƒƒƒƒŸ  +         ≥  '/
+    681       *17x'     ≥        Regler          Regelstrecke           ≥  '/
+    682       *17x'     ≥                                               ≥  '/
+    683       *17x'     ≥                        Regelgrî·e x           ≥  '/
+ 
+
+                                                                        PAGE  16
+                                                                        04-24-99
+                                                                        16:59:35
+
+  Line#  Source Line          Microsoft FORTRAN Optimizing Compiler Version 4.00
+
+    684       *17x'     ¿ƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒƒŸ  '//
+    685       *17x'Die Strecke wird im Laplacebereich (L.-Parameter s=p+jw)'/
+    686       *17x'folgenderma·en beschrieben:                             '/
+    687       *17x'        x(s) = GS(s)*y(s) + x0                          '/
+    688       *17x'Der Regler besitzt die Laplacedarstellung:              '/
+    689       *17x'        y(s) = GR(s)*(w(s)-x(s))                        '/
+    690       *17x'Er setzt sich aus den bekannten Einzeltermen zusammen:  '/
+    691       *17x'       GR(s) = KP*(1+1/(TN*s)+TV*s/(1+T1*s))            '//
+    692       *17x'KP - Proportionalbeiwert  TN - Nachstellzeit            '/
+    693       *17x'TV - Vorhaltezeit         T1 - Vorhalt-Verzîgerung      '//
+    694       *17x'x0 bedeutet den stellwertunabhÑngigen Gleichanteil. ')
+    695        call rtwait
+    696        call adclr
+    697        write(*,30)
+    698   30   format(
+    699       *17x'Wichtige Hinweise:'//
+    700       *17x'1. Alle Bildschirminhalte - auch grafische - kînnen mit den'/
+    701       *17x'   Tasten <SHIFT> <PRTSC> (gleichzeitig drÅcken) auf  einem'/
+    702       *17x'   vollkompatiblen Systemdrucker ausgedruckt werden.'//
+    703       *17x'2. Die auf Platte abgespeicherte Datenbasis ist lesbar. Mit'/
+    704       *17x'   einem Editor lassen sich alle Daten modifizieren.'//
+    705       *17x'3. Ein Wertbelegungsvorschlag vom Programm wird mit<RETURN>'/
+    706       *17x'   bestÑtigt. Wichtig: Belegung mit 0 durch "N" initiieren.'/
+    707       *17x'4. Die derzeitige Programmversion unterstÅtzt proportionale'/
+    708       *17x'   und integraltermbehaftete, aber (noch) keine sprungfÑhi-'/
+    709       *17x'   gen Antwortprozesse.'//
+    710       *17x'5. Die Prozesstotzeit darf nicht mehr als  20%  (12 Punkte)'/
+    711       *17x'   des eingegebenen Zeitausschnitts betragen.')
+    712        call rtwait
+    713        return
+    714        end
+
+Global Symbols
+
+Name                      Class   Type              Size   Offset  
+
+ADCLR . . . . . . . . . . extern  ***                ***     ***
+CBNPUT. . . . . . . . . . FSUBRT  ***                ***    1b81
+CINPUT. . . . . . . . . . FSUBRT  ***                ***    17ec
+CISDIN. . . . . . . . . . FSUBRT  ***                ***    1c99
+CLINE . . . . . . . . . . extern  ***                ***     ***
+DISKIO. . . . . . . . . . FSUBRT  ***                ***    0048
+FBCINT. . . . . . . . . . FSUBRT  ***                ***    2a62
+LCLEAR. . . . . . . . . . FSUBRT  ***                ***    1dc1
+PAUSE . . . . . . . . . . FSUBRT  ***                ***    2757
+RINPUT. . . . . . . . . . FSUBRT  ***                ***    1912
+RTWAIT. . . . . . . . . . FSUBRT  ***                ***    29b2
+XYINPU. . . . . . . . . . FSUBRT  ***                ***    1e3a
+
+Code size = 2bd1 (11217)
+Data size = 0ba3 (2979)
+Bss size  = 00e7 (231)
+
+No errors detected

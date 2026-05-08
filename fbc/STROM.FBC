@@ -1,0 +1,49 @@
+ FBC (FeedBackController) , Roether 1987
+  
+ Prozessbezeichnung:Stromtrockner Hauni           
+ Bezeichn. Antwort :Feuchte Ausgang               
+ Bezeichn. Anregung:Gasventilstellung             
+ Physikal.Einheiten:s   % Fe% EW
+ Integralanteil    ?N
+ Sprunganregung    ?J
+ Prozeá sprungf„hig?N
+ Anzahl Wertetripel:   10
+  
+   Zeitmarke         Prozessantwort    Prozessanregung
+   Anfangswerte  :   12.0000    % Fe   20.0000    % EW
+   .000000    s      12.0000    % Fe   40.0000    % EW
+   20.0000    s      12.0000    % Fe   40.0000    % EW
+   40.0000    s      11.5000    % Fe   40.0000    % EW
+   60.0000    s      11.0000    % Fe   40.0000    % EW
+   80.0000    s      10.6000    % Fe   40.0000    % EW
+   100.000    s      10.4000    % Fe   40.0000    % EW
+   120.000    s      10.2000    % Fe   40.0000    % EW
+   180.000    s      10.1000    % Fe   40.0000    % EW
+   240.000    s      10.0000    % Fe   40.0000    % EW
+   300.000    s      10.0000    % Fe   40.0000    % EW
+   Endwerte      :   10.0000    % Fe   40.0000    % EW
+  
+ Gleichwertanteil  :   14.0000     % Fe
+ Verstaerkung      :  -.100000E+00 % Fe / % EW
+  
+ Zeitdiskretes Prozessmodell:           
+ Anzahl Punkte     :   61
+ Abtastzeit        :   5.00000    s   
+ Totzeiten         :    4
+ Prozessordnung    :    3
+ Fehler LS-Sch„tzg.:   .656708E-01
+ Z-Uebertragungskoeffizienten B(z)/A(z):
+ Polynom-Position    Zaehler B(i)      Nenner A(i)    
+ Koeffizient Nr. 1   .00000000         1.0000000      
+ Koeffizient Nr. 2  -.21440154E-02    -1.2831962      
+ Koeffizient Nr. 3  -.29054999E-02     .39855161      
+ Koeffizient Nr. 4  -.17927391E-02    -.46932885E-01  
+  
+ Reglerkenngroessen:                    
+ KP:  -9.965     TN:   48.84    s    TV:   14.94    s    T1:   6.057    s   
+ Stellgewichtung r :   .2000    
+  
+ Parameter der Minimierungsprozedur:    
+   .1000E-06   .1000E-02   .1000E-02   .1000E-01   .2000       .5000E-01
+ Max. Optim.-Stufen:   10
+ Ausgabeoption     :    1

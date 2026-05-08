@@ -1,0 +1,277 @@
+;************************************************************
+;   DATEI: INTUHR.A86
+;   MODUL: INTUHR
+;   
+;   INHALT: ASSEMBLER-PROZEDUREN ZUM AUFRUF VON FORTRAN-77-PROGRAMMEN
+;           ZUR INITIALISIERUNG DER ECHTZEITUHR (MM 58167-BAUSTEIN),
+;           UND ZUR KOORDINATION VON PROGRAMMEN UEBER SYSTEM-FLAGS.
+;
+;    ZN-FFM, VE-AUT, MATIASOVSKI            25.03.86
+;    Modifikation fuer Programmierumgebung DR-FORTRAN-77,RASM-86,LINK-86:
+;    Roether                             
+;    Letzte [nderung: 9.7.1986
+;    Programmstand: Testphase
+;*************************************************************
+
+
+;############# PROZEDUR INTUHO #########################
+; FUNKTION : INITIALISIEREN (OPEN) DES ECHTZEITUHR-INTERRUPTS
+
+; AUFRUF: CALL INTUHO(UHR_INT-CONTROLL_REG);
+
+; PARAMETER: SOFTFLAG = FLAG-NUMMER (BYTE)
+;            UHR_INT_CONTROLL_REG = MASKE (BYTE)
+;                        BIT-NR.              BEDEUTUNG
+;                          0        INTERRUPT BEI UEBEREINSTIMMUNG MIT
+;                                   VERGLEICHSREGISTER
+;                          1        INTERRUPT EINMAL PRO ZEHNTEL SEKUNDE
+;                          2        INTERRUPT EINMAL PRO SEKUNDE
+;                          3        INTERRUPT EINMAL PRO MINUTE 
+;                          4        INTERRUPT EINMAL PRO STUNDE 
+;                          5        INTERRUPT EINMAL PRO TAG    
+;                          6        INTERRUPT EINMAL PRO WOCHE  
+;                          7        INTERRUPT EINMAL PRO MONAT  
+
+s_sysdat		equ	154					; CCP/M-AUFRUF
+
+interrupt_adr	equ 168					; UHR INTERRUPTVEKTOR 2Ah * 4
+icroff                   equ     0051H
+uhr_icr			equ	es:byte ptr[bx]; INTERRUPT-CONTROLL REG. UHR
+isroff                  equ     0050H
+uhr_isr			equ es:byte ptr[bx]	; INTERRUPT-STATUS REG. UHR
+extrn                   IFORGR:far
+
+                        cseg    public
+
+sysdat_seg		dw		0				; Sysdat Segment Adresse
+peripherie		dw		0F9F0H			; PERIPHERIE-SEGMENT
+
+
+
+			PUBLIC	INTUHO
+
+INTUHO:                 PUSH    DS
+			PUSH	BP
+			MOV		BP,SP
+
+			MOV		CL,s_sysdat			; SYSDATADRESSE HOLEN
+			INT		224
+			MOV		sysdat_seg,ES
+			MOV		BX,interrupt_adr	; INSTALLIEREN DER ISR
+                        PUSHF
+			CLI							; INTERRUPT SPERREN
+			XOR		AX,AX				; EXTRASEGMENT AUF 0
+			MOV		ES,AX
+			MOV     	ES:WORD PTR 0[BX],OFFSET int_service
+			MOV		AX,CS
+			MOV		ES:WORD PTR 2[BX],AX
+
+                        LES             BX,8[BP]     ;]BERNEHME 1. FORT.-PAR
+                        MOV             DX,ES:[BX]     
+                        MOV             AL,DL
+                        MOV             ES,peripherie
+                        MOV             BX,icroff
+			MOV		uhr_icr,AL
+
+			PUSH	ES					; INTERRUPT IM IMR FREIGEBEN
+			MOV		ES,sysdat_seg		; UHR-INTERRUPT FREIGEBEN
+                        MOV             BX,0C45H
+			MOV		AL,ES:BYTE PTR[BX]	;IMR
+			OR		AL,4
+			MOV		ES:BYTE PTR [BX],AL
+			POP		ES					; ZEIGT AUF PERIPHERIE
+                        MOV             BX,003BH
+			MOV		ES:BYTE PTR [BX],AL	; IRC LADEN MIT IM
+			STI							; INTERRUPT FREIGEBEN
+                        POPF
+			MOV		SP,BP
+			POP		BP
+                        POP             DS
+			RETF
+
+
+
+
+;*********************************
+; INTERRUPT-SERVICE-ROUTINE
+;*********************************
+
+int_service:           
+			PUSH	SI                ;RETTE ALLE REGISTER
+			PUSH	DI
+ 			PUSH	BP                ;GESCHIEHT DURCH FORT-CALL
+;                       PUSH    CS                ;GESCHIEHT DURCH INTERRUPT
+                        PUSH    DS                ;GESCHIEHT DURCH FORT-CALL
+                        PUSH    SS
+                        PUSH    ES
+                        PUSH    AX
+                        PUSH    BX
+                        PUSH    CX
+                        PUSH    DX
+
+                        CALLF           IFORGR   ; AUFRUF VORDERGRUNDPROGRAMM
+
+                        MOV             ES,peripherie; RUECKSETZEN INTERRUPT
+                        MOV             BX,isroff
+                        MOV             AL,uhr_isr
+
+                        POP    DX                 ;HOLE ALLE REGISTER
+                        POP    CX
+                        POP    BX
+                        POP    AX
+                        POP    ES
+                        POP    SS
+                        POP    DS
+                        POP    BP
+                        POP    DI
+                        POP    SI
+			IRET
+
+
+
+;********************************************************
+; PROZEDUR: INTUHC
+; AUFRUF:   CALL INTUHC
+; FUNKTION: SCHLIESSEN DES ECHTZEITUHR-INTERRUPTS
+;********************************************************
+
+			PUBLIC		INTUHC
+
+INTUHC:                 PUSH    DS
+			PUSH	BP
+			MOV		BP,SP
+
+			MOV		ES,peripherie			; UHRINTERRUPT SPERREN
+                        PUSHF
+                        CLI
+                        MOV             BX,icroff
+			MOV		uhr_icr,0
+			PUSH	ES
+			MOV		ES,sysdat_seg			; UHRINTERRUPT FREIGEBEN
+                        MOV             BX,0C45H
+			MOV		AL,ES:BYTE PTR [BX]	; INTERRUPT-REQUEST-MASK
+			AND		AL,0FBH
+			MOV		ES:BYTE PTR [BX],AL
+			POP		ES
+                        MOV             BX,003BH
+			MOV		ES:BYTE PTR [BX],AL	; IN HARDWARE LADEN
+			STI								; INTERRUPT FREIGEBEN
+                        POPF
+			MOV		SP,BP
+			POP		BP
+                        POP             DS
+                        RETF
+                        
+
+
+;       AD-WANDLER-CONVERSION-ROUTINE
+;      
+;       AUFRUF AUS FORTRAN-PROGRAMM: CALL IADCON(IWERT,KANAL)
+;       KANAELE: 0-7
+;
+;       LETZTER BEARBEITER:
+;       ROETHER
+;       LETZTE AENDERUNG:
+;       2. 7. 86
+;
+        DSEG
+;                       ORG         100H
+        ADSEL           EQU        9187H     ; KANALWAEHLER-ADRESSE
+        ADCON           EQU        9186H     ; KONVERSIONS-AKTIVIERUNGS-ADR.
+        PESP            EQU       0F000H     ; PERIPHERIE-SEGMENT-ADRESSE
+        ADRDL           EQU        9187H     ; WANDLERAUSGANG LOW BYTE
+        ADRDH           EQU        9186H     ; WANDLERAUSGNAG HIGH BYTE
+
+        CSEG
+
+        PUBLIC IADCON
+
+IADCON:                 PUSH       DS        ; VEREINBARUNGEN FUER EINSPRUNG
+                        PUSH       BP        ; AUS FORTRAN-ROUTINE
+                        MOV        BP,SP     
+
+                        LES        BX,12[BP]  ; EINLESEN  KANAL-PARAMETER
+                        MOV        CL,ES:[BX]  
+
+                        MOV        AX,PESP   ; KANALPARAMETER UEBERGEBEN
+                        MOV        ES,AX
+                        MOV        BX,ADSEL
+                        MOV        ES:[BX],CL
+
+                        MOV        BX,ADCON  ; BEFEHL ZUR KONVERSION
+                        MOV        AL,0FFH
+                        MOV        ES:[BX],AL
+
+                        MOV        BX,ADRDH  ; UEBERNAHME ERGEBNIS
+                        MOV        AH,ES:[BX] 
+                        MOV        BX,ADRDL
+                        MOV        AL,ES:[BX]
+
+                        MOV        CL,4      ; VERSCHIEBE ERGEBNIS UM
+                        SAR        AX,CL     ; VIER BIT NACH RECHTS
+
+ ; BEREICH -10+10       AND        AX,07FFH  ; BLENDE BIT 1 BIS BIT 5  AUS
+                        AND        AX,0FFFH  ; BLENDE BIT 1 BIS BIT 4 AUS
+                        
+                        LES        BX,8[BP]  ; SCHREIBE ERGEBNIS ZURUECK
+                        MOV        ES:[BX},AX
+
+                        MOV        SP,BP     ; BEENDE ROUTINE
+                        POP        BP                         
+                        POP        DS
+                        RETF
+;
+;       DA-WANDLER-CONVERSION-ROUTINE
+;
+;       AUFRUF AUS FORTRAN-PROGRAMM: CALL IDACON(IWERT,KANAL)
+;
+;       LETZTER BEARBEITER:
+;       ROETHER
+;       LETZTE AENDERUNG:
+;       2. 7. 86
+;
+        DSEG
+
+        DAU1H           EQU        9180H     ; ADRESSE DAU1 HIGH BYTE
+        DAU1L           EQU        9181H     ; ADRESSE DAU1 LOW BYTE
+        DAU2H           EQU        9182H     ; ADRESSE DAU2 HIGH BYTE
+        DAU2L           EQU        9183H     ; ADRESSE DAU2 LOW BYTE
+
+        CSEG 
+
+        PUBLIC IDACON
+
+IDACON:                 PUSH       DS        ; VEREINBARUNGEN FUER EINSPRUNG
+                        PUSH       BP        ; AUS FORTRAN-ROUTINE
+                        MOV        BP,SP     
+
+                        LES        BX,12[BP] ; EINLESEN KANAL 0 ODER 1 
+                        MOV        CX,ES:[BX]  
+             
+                        LES        BX,8[BP]  ; WERT EINLESEN    
+                        MOV        AX,ES:[BX]             
+                        NOT        AX        ; WERT INVERTIEREN
+                        AND        AX,07FFH  ; BITS 1 BIS 5 R]CKSETZEN
+
+                        MOV        DX,PESP   ; PERIPHERIESEGMENT LADEN
+                        MOV        ES,DX
+
+                        JCXZ       KANAL0    ; KANALWAHL
+
+                        MOV        BX,DAU2H  ; WERT AUSGEBEN AUF DAU2
+                        MOV        ES:[BX],AH
+                        MOV        BX,DAU2L
+                        MOV        ES:[BX],AL
+                        JMP        ENDE
+
+KANAL0:                 MOV        BX,DAU1H  ; WERT AUSGEBEN AUF DAU1
+                        MOV        ES:[BX],AH
+                        MOV        BX,DAU1L
+                        MOV        ES:[BX],AL
+              
+ENDE:                   MOV        SP,BP
+                        POP        BP
+                        POP        DS
+                        RETF
+
+                        END

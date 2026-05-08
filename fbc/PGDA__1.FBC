@@ -1,0 +1,51 @@
+ FBC (FeedBackController) , Roether 1987
+  
+ Prozessbezeichnung:Nichtphasenminimaler Prozeá   
+ Bezeichn. Antwort :Sprungantwort                 
+ Bezeichn. Anregung:Sprunganregung                
+ Physikal.Einheiten:min Gradm3/h
+ Integralanteil    ?N
+ Sprunganregung    ?J
+ Prozeá sprungf„hig?N
+ Anzahl Wertetripel:   11
+  
+   Zeitmarke         Prozessantwort    Prozessanregung
+   Anfangswerte  :   1.00000    Grad   .000000    m3/h
+   .000000    min    1.00000    Grad   1.00000    m3/h
+   1.00000    min    1.00000    Grad   1.00000    m3/h
+   1.30000    min    .800000    Grad   1.00000    m3/h
+   2.00000    min    .500000    Grad   1.00000    m3/h
+   2.50000    min    .900000    Grad   1.00000    m3/h
+   3.00000    min    1.20000    Grad   1.00000    m3/h
+   4.00000    min    1.80000    Grad   1.00000    m3/h
+   5.00000    min    2.20000    Grad   1.00000    m3/h
+   6.00000    min    2.50000    Grad   1.00000    m3/h
+   10.0000    min    3.00000    Grad   1.00000    m3/h
+   20.0000    min    3.45000    Grad   1.00000    m3/h
+   Endwerte      :   3.50000    Grad   1.00000    m3/h
+  
+ Gleichwertanteil  :   1.00000     Grad
+ Verstaerkung      :   2.50000     Grad / m3/h
+  
+ Zeitdiskretes Prozessmodell:           
+ Anzahl Punkte     :   61
+ Abtastzeit        :   .333333    min 
+ Totzeiten         :    3
+ Prozessordnung    :    3
+ Fehler LS-Sch„tzg.:   .288237    
+ Z-Uebertragungskoeffizienten B(z)/A(z):
+ Polynom-Position    Zaehler B(i)      Nenner A(i)    
+ Koeffizient Nr. 1   .00000000         1.0000000      
+ Koeffizient Nr. 2  -.21223343        -1.3717992      
+ Koeffizient Nr. 3   .14513022         .36854817      
+ Koeffizient Nr. 4   .17086256         .44754799E-01  
+  
+ Reglerkenngroessen:                    
+ KR:   .3210     TI:   4.147    min  TD:   1.222    min  T1:   .4721    min 
+ Stellgewichtung R :   .2500    
+  
+ Parameter der Minimierungsprozedur:    
+   .1000E-06   .1000E-02   .1000E-02   .1000E-01   .2000       .5000E-01
+ Max. Optim.-Stufen:   20
+ Ausgabeoption     :    1
+

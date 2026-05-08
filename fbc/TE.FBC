@@ -1,0 +1,47 @@
+ FBC (FeedBackController) , Roether 1987
+  
+ Prozessbezeichnung:Trocknerprozess               
+ Bezeichn. Antwort :Feuchte Ausgang               
+ Bezeichn. Anregung:Sollwert Temp.-Regler         
+ Physikal.Einheiten:s   % FeCels
+ Integralanteil    ?N
+ Sprunganregung    ?J
+ Prozeá sprungf„hig?N
+ Anzahl Wertetripel:    8
+  
+   Zeitmarke         Prozessantwort    Prozessanregung
+   Anfangswerte  :   12.5000    % Fe   .000000    Cels
+   .000000    s      12.5000    % Fe   2.00000    Cels
+   20.0000    s      12.5000    % Fe   2.00000    Cels
+   30.0000    s      12.4000    % Fe   2.00000    Cels
+   60.0000    s      11.6000    % Fe   2.00000    Cels
+   90.0000    s      10.8000    % Fe   2.00000    Cels
+   102.000    s      10.6000    % Fe   2.00000    Cels
+   120.000    s      10.5000    % Fe   2.00000    Cels
+   180.000    s      10.5000    % Fe   2.00000    Cels
+   Endwerte      :   10.5000    % Fe   2.00000    Cels
+  
+ Gleichwertanteil  :   12.5000     % Fe
+ Verstaerkung      :  -.999998     % Fe / Cels
+  
+ Zeitdiskretes Prozessmodell:           
+ Anzahl Punkte     :   61
+ Abtastzeit        :   3.00000    s   
+ Totzeiten         :    6
+ Prozessordnung    :    3
+ Fehler LS-Sch„tzg.:   .632139E-01
+ Z-Uebertragungskoeffizienten B(z)/A(z):
+ Polynom-Position    Zaehler B(i)      Nenner A(i)    
+ Koeffizient Nr. 1   .00000000         1.0000000      
+ Koeffizient Nr. 2  -.79937030E-03    -1.6588483      
+ Koeffizient Nr. 3  -.90678788E-02     .54405655      
+ Koeffizient Nr. 4  -.35958475E-02     .12825487      
+  
+ Reglerkenngroessen:                    
+ KP:  -.7881     TN:   37.60    s    TV:   22.17    s    T1:   8.001    s   
+ Stellgewichtung r :   .2000    
+  
+ Parameter der Minimierungsprozedur:    
+   .1000E-06   .1000E-02   .1000E-02   .1000E-01   .2000       .5000E-01
+ Max. Optim.-Stufen:   10
+ Ausgabeoption     :    1

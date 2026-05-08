@@ -1,0 +1,46 @@
+ FBC (FeedBackController) , Roether 1987
+  
+ Prozessbezeichnung:Gasdruckregelung PIC_612      
+ Bezeichn. Antwort :Meádose M_299 (10V <=>15bar)  
+ Bezeichn. Anregung:Ventil  V_409 (10V <=> 100%)  
+ Physikal.Einheiten:sec VoltVolt
+ Integralanteil    ?N
+ Sprunganregung    ?J
+ Prozeá sprungf„hig?N
+ Anzahl Wertetripel:    7
+  
+   Zeitmarke         Prozessantwort    Prozessanregung
+   Anfangswerte  :   10.0000    Volt   10.0000    Volt
+   .000000    sec    10.0000    Volt   9.00000    Volt
+   21.2000    sec    10.0000    Volt   9.00000    Volt
+   51.5000    sec    9.73000    Volt   9.00000    Volt
+   91.0000    sec    9.47000    Volt   9.00000    Volt
+   159.000    sec    9.20000    Volt   9.00000    Volt
+   257.600    sec    9.07000    Volt   9.00000    Volt
+   300.000    sec    9.00000    Volt   9.00000    Volt
+   Endwerte      :   9.00000    Volt   9.00000    Volt
+  
+ Gleichwertanteil  :   .266454E-13 Volt
+ Verstaerkung      :   1.00000     Volt / Volt
+  
+ Zeitdiskretes Prozessmodell:           
+ Anzahl Punkte     :   61
+ Abtastzeit        :   5.00000    sec 
+ Totzeiten         :    4
+ Prozessordnung    :    3
+ Fehler LS-Sch„tzg.:   .247366E-01
+ Z-Uebertragungskoeffizienten B(z)/A(z):
+ Polynom-Position    Zaehler B(i)      Nenner A(i)    
+ Koeffizient Nr. 1   .00000000         1.0000000      
+ Koeffizient Nr. 2   .59132372E-02    -1.9052360      
+ Koeffizient Nr. 3   .12846270E-01     1.2964794      
+ Koeffizient Nr. 4   .52738999E-02    -.36721001      
+  
+ Reglerkenngroessen:                    
+ KP:   1.729     TN:   115.4    sec  TV:   .0000    sec  T1:   .0000    sec 
+ Stellgewichtung r :   .1000    
+  
+ Parameter der Minimierungsprozedur:    
+   .1000E-06   .1000E-02   .1000E-02   .1000E-01   .2000       .5000E-01
+ Max. Optim.-Stufen:   10
+ Ausgabeoption     :    1

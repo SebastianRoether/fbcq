@@ -1,0 +1,45 @@
+ FBC (FeedBackController) , Roether 1987
+  
+ Prozessbezeichnung:Integrator/Totzeit            
+ Bezeichn. Antwort :Prozeá-Ausgang                
+ Bezeichn. Anregung:Prozeá-Eingang                
+ Physikal.Einheiten:s   V   V   
+ Integralanteil    ?J
+ Sprunganregung    ?J
+ Prozeá sprungf„hig?N
+ Anzahl Wertetripel:    8
+  
+   Zeitmarke         Prozessantwort    Prozessanregung
+   Anfangswerte  :   .000000    V      .000000    V   
+   .000000    s      .000000    V      1.00000    V   
+   5.00000    s      .000000    V      1.00000    V   
+   15.0000    s      10.0000    V      1.00000    V   
+   25.0000    s      20.0000    V      1.00000    V   
+   35.0000    s      30.0000    V      1.00000    V   
+   45.0000    s      40.0000    V      1.00000    V   
+   55.0000    s      50.0000    V      1.00000    V   
+   60.0000    s      55.0000    V      1.00000    V   
+   Endwerte      :   55.0000    V      1.00000    V   
+  
+ Komp. Gleichanteil:   .000000     V    / s   
+ Integrationsbeiw. :   1.00000     V    / V   *s   
+  
+ Zeitdiskretes Prozessmodell:           
+ Anzahl Punkte     :   61
+ Abtastzeit        :   1.00000    s   
+ Totzeiten         :    5
+ Prozessordnung    :    1
+ Fehler LS-Sch„tzg.:   1.40216    
+ Z-Uebertragungskoeffizienten B(z)/A(z):
+ Polynom-Position    Zaehler B(i)      Nenner A(i)    
+ Koeffizient Nr. 1   .00000000         1.0000000      
+ Koeffizient Nr. 2   1.0000000        -1.0000000      
+  
+ Reglerkenngroessen:                    
+ KP:   .7944E-01 TN:   40.00    s    TV:   .0000    s    T1:   .0000    s   
+ Stellgewichtung r :   .9500    
+  
+ Parameter der Minimierungsprozedur:    
+   .1000E-06   .1000E-02   .1000E-02   .1000E-01   .2000       .5000E-01
+ Max. Optim.-Stufen:   10
+ Ausgabeoption     :    1

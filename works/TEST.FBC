@@ -1,0 +1,46 @@
+ FBC (FeedBackController) , Roether 1987
+  
+ Prozessbezeichnung:Tiefpaá-Prozeá mit Totzeit    
+ Bezeichn. Antwort :Prozeá-Ausgang                
+ Bezeichn. Anregung:Prozeá-Eingang                
+ Physikal.Einheiten:s   V   V   
+ Integralanteil    ?N
+ Sprunganregung    ?J
+ Prozeá sprungf„hig?N
+ Anzahl Wertetripel:    7
+  
+   Zeitmarke         Prozessantwort    Prozessanregung
+   Anfangswerte  :   10.0000    V      5.00000    V   
+   .000000    s      10.0000    V      6.00000    V   
+   4.00000    s      10.0000    V      6.00000    V   
+   14.0000    s      10.2930    V      6.00000    V   
+   24.0000    s      10.6500    V      6.00000    V   
+   39.0000    s      10.9000    V      6.00000    V   
+   49.0000    s      10.9580    V      6.00000    V   
+   60.0000    s      10.9820    V      6.00000    V   
+   Endwerte      :   11.0000    V      6.00000    V   
+  
+ Gleichwertanteil  :   5.03324     V   
+ Verstaerkung      :   .994461     V    / V   
+  
+ Zeitdiskretes Prozessmodell:           
+ Anzahl Punkte     :   61
+ Abtastzeit        :   1.00000    s   
+ Totzeiten         :    4
+ Prozessordnung    :    3
+ Fehler LS-Sch„tzg.:   .000000    
+ Z-Uebertragungskoeffizienten B(z)/A(z):
+ Polynom-Position    Zaehler B(i)      Nenner A(i)    
+ Koeffizient Nr. 1   .00000000         1.0000000      
+ Koeffizient Nr. 2   .46200000E-02    -2.4882400      
+ Koeffizient Nr. 3   .16900000E-02     2.0538700      
+ Koeffizient Nr. 4  -.27300000E-02    -.56203002      
+  
+ Reglerkenngroessen:                    
+ KP:   1.007     TN:   14.74    s    TV:   4.819    s    T1:   2.746    s   
+ Stellgewichtung r :   .2000    
+  
+ Parameter der Minimierungsprozedur:    
+   .1000E-06   .1000E-02   .1000E-02   .1000E-01   .2000       .5000E-01
+ Max. Optim.-Stufen:   10
+ Ausgabeoption     :    1

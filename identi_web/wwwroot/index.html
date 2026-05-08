@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IDENTI – Process Parameter Identification</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    :root {
+      --bg:     #0f1117;
+      --card:   #1a1d27;
+      --border: #2e3148;
+      --accent: #4f8ef7;
+      --green:  #3ecf8e;
+      --red:    #e05252;
+      --muted:  #8892a4;
+      --text:   #e2e8f0;
+      --font:   'Segoe UI', system-ui, sans-serif;
+    }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); }
+
+    #content-wrap {
+      transition: padding-right .25s ease;
+    }
+
+    header {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 1rem 2rem; border-bottom: 1px solid var(--border);
+      background: var(--card);
+    }
+    header h1 { margin: 0; font-size: 1.2rem; font-weight: 600; letter-spacing: .03em; }
+    header span { color: var(--muted); font-size: .85rem; }
+
+    main { padding: 1.5rem 2rem; max-width: 1400px; margin: 0 auto; }
+
+    .toolbar {
+      display: flex; gap: .75rem; margin-bottom: .75rem; flex-wrap: wrap;
+      align-items: center;
+    }
+    .options-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: .75rem 1rem;
+      display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+    .options-card label { color: var(--muted); font-size: .82rem; }
+    .card select, .options-card select {
+      background: #13161f; color: var(--text); border: 1px solid var(--border);
+      border-radius: 5px; padding: .3rem .5rem; font-size: .82rem; cursor: pointer;
+    }
+    .card select:focus, .options-card select:focus { outline: none; border-color: var(--accent); }
+    .noise-label {
+      display: flex; align-items: center; gap: .35rem;
+      font-size: .82rem; color: var(--muted); cursor: pointer;
+      padding: .25rem .5rem; border: 1px solid var(--border);
+      border-radius: 5px; background: #13161f;
+      white-space: nowrap; user-select: none;
+    }
+    .noise-label:hover { border-color: var(--accent); color: var(--text); }
+    .noise-label input[type=checkbox] { accent-color: var(--accent); cursor: pointer; }
+    button {
+      padding: .5rem 1.25rem; border: 1px solid var(--border);
+      border-radius: 6px; cursor: pointer; font-size: .9rem;
+      background: var(--card); color: var(--text); transition: .15s;
+    }
+    button:hover  { background: var(--border); }
+    button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    button:disabled { opacity: .45; cursor: default; }
+
+    .badge {
+      display: inline-block; padding: .15rem .6rem; border-radius: 4px;
+      font-size: .75rem; font-weight: 600; margin-left: .5rem;
+    }
+    .badge.ok  { background: #1a3d2e; color: var(--green); }
+    .badge.err { background: #3d1a1a; color: var(--red); }
+
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.25rem;
+    }
+    .card h2 { margin: 0 0 .75rem; font-size: .95rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+
+    .chart-wrap { position: relative; height: 220px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    th { text-align: left; color: var(--muted); font-weight: 500; padding: .3rem .5rem; border-bottom: 1px solid var(--border); }
+    td { padding: .3rem .5rem; font-variant-numeric: tabular-nums; }
+    tr:hover td { background: rgba(255,255,255,.03); }
+
+    .matrix-grid {
+      display: flex; flex-wrap: wrap; gap: .75rem;
+    }
+    .matrix-block {
+      background: #13161f; border: 1px solid var(--border);
+      border-radius: 6px; padding: .5rem .75rem;
+    }
+    .matrix-block h3 { margin: 0 0 .4rem; font-size: .8rem; color: var(--accent); }
+    .matrix-row { display: flex; gap: .5rem; font-size: .78rem; font-variant-numeric: tabular-nums; }
+    .matrix-cell { min-width: 70px; text-align: right; padding: .1rem 0; }
+
+    .info-row { display: flex; flex-wrap: wrap; gap: 1.5rem; font-size: .82rem; }
+    .info-item label { color: var(--muted); margin-right: .3rem; }
+
+    #status-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--card); border-top: 1px solid var(--border);
+      padding: .4rem 2rem; font-size: .8rem; color: var(--muted);
+      display: flex; gap: 1rem; align-items: center;
+      transition: right .25s ease;
+    }
+    #spinner {
+      width: 14px; height: 14px; border: 2px solid var(--border);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin .7s linear infinite; display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty { color: var(--muted); font-size: .85rem; padding: 2rem; text-align: center; }
+
+    .pole-plot-wrap { position: relative; height: 200px; }
+
+    /* ── Chat panel ── */
+    #chat-toggle {
+      margin-left: auto;
+      display: flex; align-items: center; gap: .4rem;
+      padding: .35rem .85rem; font-size: .82rem;
+    }
+    .chat-panel {
+      position: fixed; right: 0; top: 0; bottom: 40px;
+      width: 340px; background: var(--card);
+      border-left: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      transform: translateX(100%);
+      transition: transform .25s ease;
+      z-index: 200;
+    }
+    .chat-panel.open { transform: translateX(0); }
+    .chat-header {
+      padding: .65rem 1rem; border-bottom: 1px solid var(--border);
+      font-size: .88rem; font-weight: 600; display: flex;
+      align-items: center; gap: .6rem;
+    }
+    .chat-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      object-fit: cover; flex-shrink: 0;
+      border: 1px solid var(--border);
+    }
+    .chat-header-info { display: flex; flex-direction: column; gap: .1rem; flex: 1; }
+    .chat-header-info strong { font-size: .88rem; }
+    .chat-header-info span { color: var(--muted); font-size: .72rem; font-weight: 400; }
+    .chat-close { background: none; border: none; color: var(--muted);
+      cursor: pointer; font-size: 1.1rem; padding: 0 .25rem; }
+    .chat-close:hover { color: var(--text); background: none; }
+    .chat-messages {
+      flex: 1; overflow-y: auto; padding: .75rem;
+      display: flex; flex-direction: column; gap: .5rem;
+    }
+    .chat-msg { max-width: 88%; padding: .45rem .7rem;
+      border-radius: 8px; font-size: .82rem; line-height: 1.45; white-space: pre-wrap; }
+    .chat-msg.user {
+      align-self: flex-end;
+      background: var(--accent); color: #fff;
+      border-bottom-right-radius: 2px;
+    }
+    .chat-msg.assistant {
+      align-self: flex-start;
+      background: #13161f; border: 1px solid var(--border);
+      border-bottom-left-radius: 2px;
+    }
+    .chat-msg-row {
+      display: flex; align-items: flex-end; gap: .4rem;
+    }
+    .chat-msg-row .chat-avatar {
+      width: 22px; height: 22px; flex-shrink: 0; margin-bottom: .1rem;
+    }
+    .chat-msg.thinking { color: var(--muted); font-style: italic; }
+    .chat-action-pill {
+      align-self: flex-start;
+      font-size: .72rem; color: var(--green);
+      background: #1a3d2e; border-radius: 4px;
+      padding: .15rem .5rem; margin-top: -.25rem;
+    }
+    .chat-input-row {
+      padding: .6rem; border-top: 1px solid var(--border);
+      display: flex; gap: .4rem;
+    }
+    .chat-input-row input {
+      flex: 1; background: #13161f; color: var(--text);
+      border: 1px solid var(--border); border-radius: 5px;
+      padding: .4rem .6rem; font-size: .82rem;
+      font-family: var(--font);
+    }
+    .chat-input-row input:focus { outline: none; border-color: var(--accent); }
+    .chat-input-row button { padding: .4rem .75rem; font-size: .82rem; }
+  </style>
+</head>
+<div id="content-wrap">
+<header>
+  <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+    <rect width="28" height="28" rx="6" fill="#1e2235"/>
+    <polyline points="4,20 8,12 12,16 16,8 20,10 24,4" stroke="#4f8ef7" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <h1>IDENTI</h1>
+  <span>Process Parameter Identification · C# port of F. Roether, 1986</span>
+  <button id="chat-toggle" onclick="toggleChat()">&#128172; Friedi fragen</button>
+</header>
+
+<main>
+  <div class="toolbar">
+    <button id="btn-a" data-scenario="a" onclick="selectScenario('a')">&#9654; Test A &mdash; PT4 Step Response</button>
+    <button id="btn-b" data-scenario="b" onclick="selectScenario('b')">&#9654; Test B &mdash; Cascaded PT1 + PRBS</button>
+  </div>
+
+  <div id="result-area">
+    <div class="empty">Select a scenario above to run identification and view results.</div>
+  </div>
+</main>
+
+<div id="status-bar">
+  <div id="spinner"></div>
+  <span id="status-text">Ready</span>
+</div>
+</div><!-- #content-wrap -->
+
+<div class="chat-panel" id="chat-panel">
+  <div class="chat-header">
+    <img src="avatar.jpg" class="chat-avatar" alt="Friedi" />
+    <div class="chat-header-info">
+      <strong>Friedi</strong>
+      <span>Systemidentifikations-Experte &middot; 1986</span>
+    </div>
+    <button class="chat-close" onclick="toggleChat()" title="Close">&times;</button>
+  </div>
+  <div class="chat-messages" id="chat-messages"></div>
+  <div class="chat-input-row">
+    <input id="chat-input" type="text" placeholder="Frage stellen…"
+           onkeydown="if(event.key==='Enter')sendChat()" />
+    <button onclick="sendChat()">Senden</button>
+  </div>
+</div>
+
+<script>
+let chartSignal = null;
+let chartPole   = null;
+let currentScenario = null;
+
+// ── Persistent UI state (readable by chatbot) ─────────────────
+let noiseEnabled = false;
+let noiseLevel   = 0.05;   // fraction, e.g. 0.05 = 5%
+let currentMethod = '1';
+let chatHistory  = [];
+let currentResult = null;  // last API result object, sent to chat for context
+
+// ── Custom simulation scenarios (added by Friedi) ─────────────
+let simCounter = 0;
+const customScenarios = [];  // [{ key, label, poles, inputType }]
+
+function addCustomScenario(label, result, poles, inputType) {
+  simCounter++;
+  const key = 'sim-' + simCounter;
+  customScenarios.push({ key, label, poles, inputType });
+
+  // Add button to toolbar
+  const toolbar = document.querySelector('.toolbar');
+  const btn = document.createElement('button');
+  btn.id = 'btn-' + key;
+  btn.dataset.scenario = key;
+  btn.textContent = '\u25B6 ' + label;
+  btn.onclick = () => selectScenario(key);
+  toolbar.appendChild(btn);
+
+  // Render the result Friedi already computed, then set as current scenario
+  currentScenario = key;
+  renderResult(result, key);
+  currentResult = result;
+  document.getElementById('status-text').textContent =
+    result.success ? `\u2713 ${result.method}` : `\u2717 ${result.errorMessage}`;
+  document.querySelectorAll('.toolbar button').forEach(b =>
+    b.classList.toggle('active', b.dataset.scenario === key));
+}
+
+function selectScenario(which) {
+  currentScenario = which;
+  runTest();
+}
+
+async function runTest() {
+  const which = currentScenario;
+  if (!which) return;
+
+  // Sync from DOM if controls exist (user may have changed them)
+  noiseEnabled  = document.getElementById('noise-sel')?.checked ?? noiseEnabled;
+  currentMethod = document.getElementById('method-sel')?.value  ?? currentMethod;
+
+  // Update active / disabled state for all toolbar buttons
+  const allBtns = document.querySelectorAll('.toolbar button');
+  allBtns.forEach(b => {
+    b.classList.toggle('active', b.dataset.scenario === which);
+    b.disabled = true;
+  });
+  document.getElementById('spinner').style.display = 'block';
+  document.getElementById('status-text').textContent = 'Running identification…';
+
+  try {
+    let data;
+    if (which === 'a' || which === 'b') {
+      const params = new URLSearchParams();
+      if (noiseEnabled)          params.set('noise',  String(noiseLevel));
+      if (currentMethod !== '1') params.set('method', currentMethod);
+      const qs = params.toString();
+      const res = await fetch(`/api/auto-${which}${qs ? '?' + qs : ''}`);
+      data = await res.json();
+    } else {
+      // Custom scenario — re-run via /api/sim with current noise & method
+      const sc = customScenarios.find(s => s.key === which);
+      if (!sc) return;
+      const res = await fetch('/api/sim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          poles: sc.poles,
+          inputType: sc.inputType,
+          method: parseInt(currentMethod, 10),
+          noise: noiseEnabled ? noiseLevel : 0
+        })
+      });
+      data = await res.json();
+    }
+    renderResult(data, which);
+    currentResult = data;
+    document.getElementById('status-text').textContent =
+      data.success ? `\u2713 ${data.method}` : `\u2717 ${data.errorMessage}`;
+  } catch(e) {
+    document.getElementById('status-text').textContent = 'Error: ' + e.message;
+  } finally {
+    allBtns.forEach(b => b.disabled = false);
+    document.getElementById('spinner').style.display = 'none';
+  }
+}
+
+function renderResult(d, which) {
+  const area = document.getElementById('result-area');
+
+  // Preserve control state across re-renders
+  const prevMethod = currentMethod;
+  const prevNoisy  = noiseEnabled;
+  const noisePct   = Math.round(noiseLevel * 100);
+
+  const badge = d.success
+    ? `<span class="badge ok">✓ Success</span>`
+    : `<span class="badge err">✗ ${d.errorMessage}</span>`;
+
+  const opt = (v, label) =>
+    `<option value="${v}"${prevMethod === v ? ' selected' : ''}>${label}</option>`;
+
+  const infoHtml = `
+    <div class="info-row">
+      <div class="info-item">
+        <label>Method&nbsp;</label>
+        <select id="method-sel" onchange="onMethodChange(this)">
+          ${opt('1', '1 – Standard LS')}
+          ${opt('2', '2 – QR-LS')}
+          ${opt('3', '3 – Instrumental Variables')}
+          ${opt('4', '4 – QR-IV')}
+        </select>
+      </div>
+      <label class="noise-label" title="Add 5% Gaussian noise to the output signal">
+        <input type="checkbox" id="noise-sel" onchange="onNoiseToggle(this)"${prevNoisy ? ' checked' : ''}> Add noise (<span id="noise-pct">${noisePct}%</span>)
+      </label>
+      <div class="info-item"><label>Start:</label>${d.nanF}</div>
+      <div class="info-item"><label>Samples:</label>${d.ianz}</div>
+      <div class="info-item"><label>Outputs:</label>${d.outputChannels.join(', ')}</div>
+      <div class="info-item"><label>Inputs:</label>${d.inputChannels.join(', ')}</div>
+      <div class="info-item"><label>Structure:</label>${d.structureIndices.join(', ')}</div>
+    </div>`;
+
+  let matricesHtml = '<div class="empty">Identification failed – no matrices.</div>';
+  if (d.success && d.matrices.length > 0) {
+    matricesHtml = '<div class="matrix-grid">' +
+      d.matrices.map(m => matrixHtml(m)).join('') + '</div>';
+  }
+
+  // Coefficient comparison table (W-vector entries vs theoretical)
+  const wTable = d.success ? wTableHtml(d, which) : '';
+
+  area.innerHTML = `
+    <div class="card" style="margin-bottom:1rem;">${infoHtml}</div>
+    <div class="grid2" style="margin-bottom:1rem;">
+      <div class="card">
+        <h2>Signal Channels &amp; Model Prediction</h2>
+        <div class="chart-wrap"><canvas id="chart-signal"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>Pole-Zero Map</h2>
+        <div class="pole-plot-wrap"><canvas id="chart-poles"></canvas></div>
+      </div>
+    </div>
+    <div class="grid2" style="margin-bottom:1rem;">
+      <div class="card">
+        <h2>Identified Matrices ${badge}</h2>
+        ${matricesHtml}
+      </div>
+      <div class="card">
+        <h2>Parameter Summary</h2>
+        ${wTable}
+      </div>
+    </div>`;
+
+  renderSignalChart(d.channels, d.prediction);
+  if (d.success) renderPoleChart(d.matrices);
+}
+
+// ── Signal Chart ─────────────────────────────────────────────
+function renderSignalChart(channels, prediction) {
+  if (chartSignal) { chartSignal.destroy(); chartSignal = null; }
+  const ctx = document.getElementById('chart-signal').getContext('2d');
+
+  const COLORS = ['#4f8ef7', '#3ecf8e', '#e6a020', '#e05252'];
+  const datasets = channels.map((ch, i) => ({
+    label: `${ch.label} [${ch.unit}]`,
+    data: ch.samples,
+    borderColor: COLORS[i % COLORS.length],
+    borderWidth: 1.2,
+    pointRadius: 0,
+    tension: 0.1,
+  }));
+
+  // Add model prediction overlay as dashed line
+  if (prediction && prediction.samples) {
+    datasets.splice(1, 0, {
+      label: `${prediction.label} [${prediction.unit}]`,
+      data: prediction.samples,
+      borderColor: '#f7c94f',
+      borderWidth: 1.5,
+      borderDash: [5, 3],
+      pointRadius: 0,
+      tension: 0.1,
+    });
+  }
+
+  chartSignal = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: channels[0].samples.map((_, i) => i + 1),
+      datasets,
+    },
+    options: {
+      animation: false,
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#8892a4', boxWidth: 12, font: { size: 11 } } } },
+      scales: {
+        x: { ticks: { color: '#8892a4', maxTicksLimit: 10, font: { size: 10 } },
+             grid:  { color: '#1e2235' } },
+        y: { ticks: { color: '#8892a4', font: { size: 10 } },
+             grid:  { color: '#1e2235' } },
+      },
+    },
+  });
+}
+
+// ── Pole-Zero Map ────────────────────────────────────────────
+function renderPoleChart(matrices) {
+  if (chartPole) { chartPole.destroy(); chartPole = null; }
+  const ctx = document.getElementById('chart-poles').getContext('2d');
+
+  const A = matrices.find(m => m.name === 'A');
+  const poles = A ? eigenvalues2x2(A) : [];
+  const unitCircle = Array.from({length: 361}, (_, i) => ({
+    x: Math.cos(i * Math.PI / 180), y: Math.sin(i * Math.PI / 180)
+  }));
+
+  chartPole = new Chart(ctx, {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          label: 'Unit circle',
+          data: unitCircle,
+          borderColor: '#2e3148',
+          backgroundColor: 'transparent',
+          showLine: true,
+          pointRadius: 0,
+          borderWidth: 1,
+          borderDash: [4, 4],
+        },
+        {
+          label: 'Poles',
+          data: poles.map(p => ({ x: p.re, y: p.im })),
+          backgroundColor: '#e05252',
+          borderColor: '#ff7070',
+          pointRadius: 7,
+          pointStyle: 'crossRot',
+        },
+      ],
+    },
+    options: {
+      animation: false,
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#8892a4', boxWidth: 12, font: { size: 11 } } } },
+      scales: {
+        x: { min: -1.4, max: 1.4, ticks: { color: '#8892a4', font: { size: 10 } },
+             grid: { color: '#1e2235' },
+             title: { display: true, text: 'Real', color: '#8892a4', font: { size: 10 } } },
+        y: { min: -1.1, max: 1.1, ticks: { color: '#8892a4', font: { size: 10 } },
+             grid: { color: '#1e2235' },
+             title: { display: true, text: 'Imag', color: '#8892a4', font: { size: 10 } } },
+      },
+    },
+  });
+}
+
+// Compute eigenvalues of the A matrix (works for 1×1 and 2×2 blocks,
+// otherwise reports diagonal entries as approximate real poles).
+function eigenvalues2x2(A) {
+  const n = A.rows, vals = A.values;
+  const idx = (r, c) => (r - 1) * n + (c - 1); // 0-based flat index
+
+  if (n === 1) {
+    return [{ re: vals[0], im: 0 }];
+  }
+  if (n === 2) {
+    const a = vals[idx(1,1)], b = vals[idx(1,2)];
+    const c = vals[idx(2,1)], d = vals[idx(2,2)];
+    const tr = a + d, det = a*d - b*c;
+    const disc = tr*tr - 4*det;
+    if (disc >= 0) {
+      const sq = Math.sqrt(disc);
+      return [{ re: (tr+sq)/2, im: 0 }, { re: (tr-sq)/2, im: 0 }];
+    } else {
+      const sq = Math.sqrt(-disc);
+      return [{ re: tr/2, im: sq/2 }, { re: tr/2, im: -sq/2 }];
+    }
+  }
+  // General: companion-like diagonal entries as fallback
+  return Array.from({ length: n }, (_, i) => ({ re: vals[idx(i+1, i+1)], im: 0 }));
+}
+
+// ── Matrix HTML ───────────────────────────────────────────────
+function matrixHtml(m) {
+  let rows = '';
+  let idx = 0;
+  for (let r = 0; r < m.rows; r++) {
+    let cells = '';
+    for (let c = 0; c < m.cols; c++) {
+      cells += `<div class="matrix-cell">${m.values[idx++].toFixed(5)}</div>`;
+    }
+    rows += `<div class="matrix-row">${cells}</div>`;
+  }
+  return `<div class="matrix-block"><h3>${m.name}  (${m.rows}×${m.cols})</h3>${rows}</div>`;
+}
+
+// ── W-vector summary table ────────────────────────────────────
+function wTableHtml(d, which) {
+  const A = d.matrices.find(m => m.name === 'A');
+  const B = d.matrices.find(m => m.name === 'B');
+  const Kend = d.matrices.find(m => m.name === 'Kend');
+  if (!A) return '<div class="empty">No model data.</div>';
+
+  let rows = '';
+
+  // DC gain
+  if (Kend) {
+    rows += `<tr><td>DC gain (Kend)</td><td>${Kend.values[0].toFixed(5)}</td>
+      <td style="color:var(--muted)">≈ 1.0 expected</td></tr>`;
+  }
+
+  // Poles (eigenvalues of A)
+  const poles = eigenvalues2x2(A);
+  poles.forEach((p, i) => {
+    const mag  = Math.sqrt(p.re*p.re + p.im*p.im).toFixed(5);
+    const repr = p.im === 0 ? p.re.toFixed(5) : `${p.re.toFixed(4)} ± ${Math.abs(p.im).toFixed(4)}j`;
+    rows += `<tr><td>Pole ${i+1}</td><td>${repr}</td>
+      <td style="color:var(--muted)">|z|=${mag}${parseFloat(mag)<1?' ✓ stable':' ✗ unstable'}</td></tr>`;
+  });
+
+  if (which === 'a') {
+    const trueA = 0.904837418036;
+    rows += `<tr><td style="color:var(--muted)">True pole (PT4)</td>
+      <td>${trueA.toFixed(6)}</td><td style="color:var(--muted)">z=e^(−0.1)</td></tr>`;
+  }
+  if (which === 'b') {
+    const z1 = 0.818730753078, z2 = 0.904837418036;
+    rows += `<tr><td style="color:var(--muted)">True pole z1 (T=5s)</td>
+      <td>${z1.toFixed(6)}</td><td style="color:var(--muted)">z=e^(−0.2)</td></tr>`;
+    rows += `<tr><td style="color:var(--muted)">True pole z2 (T=10s)</td>
+      <td>${z2.toFixed(6)}</td><td style="color:var(--muted)">z=e^(−0.1)</td></tr>`;
+  }
+
+  return `<table>
+    <thead><tr><th>Parameter</th><th>Identified</th><th>Note</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+// ── Noise / method helpers ────────────────────────────────────
+function onNoiseToggle(cb) {
+  noiseEnabled = cb.checked;
+  runTest();
+}
+
+function onMethodChange(sel) {
+  currentMethod = sel.value;
+  runTest();
+}
+
+// ── Chat panel ────────────────────────────────────────────────
+function summariseResult(d) {
+  if (!d || !d.success) return { success: false };
+  const A    = d.matrices?.find(m => m.name === 'A');
+  const B    = d.matrices?.find(m => m.name === 'B');
+  const C    = d.matrices?.find(m => m.name === 'C');
+  const Kend = d.matrices?.find(m => m.name === 'Kend');
+  return {
+    success: d.success,
+    method: d.method,
+    scenario: currentScenario,
+    nanF: d.nanF,
+    ianz: d.ianz,
+    noiseEnabled,
+    noiseLevel,
+    outputChannels:   d.outputChannels,
+    inputChannels:    d.inputChannels,
+    structureIndices: d.structureIndices,
+    A:    A    ? { rows: A.rows,    cols: A.cols,    values: A.values    } : null,
+    B:    B    ? { rows: B.rows,    cols: B.cols,    values: B.values    } : null,
+    C:    C    ? { rows: C.rows,    cols: C.cols,    values: C.values    } : null,
+    Kend: Kend ? Kend.values[0] : null,
+  };
+}
+
+function toggleChat() {
+  const panel   = document.getElementById('chat-panel');
+  const wrap    = document.getElementById('content-wrap');
+  const statusBar = document.getElementById('status-bar');
+  const isOpen  = panel.classList.toggle('open');
+  wrap.style.paddingRight  = isOpen ? '340px' : '';
+  statusBar.style.right    = isOpen ? '340px' : '0';
+  if (isOpen && chatHistory.length === 0) {
+    appendMsg('assistant',
+      "Moin! Ich bin Friedi. Dieses Identifikationsprogramm habe ich 1986 geschrieben – " +
+      "damals noch in Fortran 77. Frag mich zu seiner Verwendung oder warum es nicht funktioniert.");
+  }
+  if (panel.classList.contains('open'))
+    document.getElementById('chat-input').focus();
+}
+
+function appendMsg(role, text, pill) {
+  const box = document.getElementById('chat-messages');
+  if (role === 'assistant') {
+    const row = document.createElement('div');
+    row.className = 'chat-msg-row';
+    row.innerHTML = `<img src="avatar.jpg" class="chat-avatar" alt="" />`;
+    const div = document.createElement('div');
+    div.className = 'chat-msg assistant';
+    div.textContent = text;
+    row.appendChild(div);
+    box.appendChild(row);
+  } else {
+    const div = document.createElement('div');
+    div.className = `chat-msg ${role}`;
+    div.textContent = text;
+    box.appendChild(div);
+  }
+  if (pill) {
+    const p = document.createElement('div');
+    p.className = 'chat-action-pill';
+    p.textContent = pill;
+    box.appendChild(p);
+  }
+  box.scrollTop = box.scrollHeight;
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const text  = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  appendMsg('user', text);
+  chatHistory.push({ role: 'user', content: text });
+
+  // Thinking indicator
+  const box = document.getElementById('chat-messages');
+  const thinking = document.createElement('div');
+  thinking.className = 'chat-msg-row';
+  thinking.innerHTML = `<img src="avatar.jpg" class="chat-avatar" alt="" /><div class="chat-msg assistant thinking">Thinking\u2026</div>`;
+  box.appendChild(thinking);
+  box.scrollTop = box.scrollHeight;
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: chatHistory,
+        noiseEnabled,
+        noiseLevel,
+        currentScenario,
+        currentResult: currentResult ? summariseResult(currentResult) : null
+      })
+    });
+    const data = await res.json();
+    thinking.remove();
+
+    // Handle UI action before showing message
+    let pill = null;
+    if (data.uiAction?.type === 'set_noise') {
+      const prev = noiseEnabled;
+      noiseEnabled = data.uiAction.enabled;
+      if (data.uiAction.level != null) noiseLevel = data.uiAction.level;
+      pill = `⚙ noise ${noiseEnabled ? 'ON' : 'OFF'}` +
+             (data.uiAction.level != null ? ` @ ${Math.round(noiseLevel * 100)}%` : '');
+      // Update live controls if rendered
+      const cb = document.getElementById('noise-sel');
+      const pct = document.getElementById('noise-pct');
+      if (cb)  cb.checked = noiseEnabled;
+      if (pct) pct.textContent = Math.round(noiseLevel * 100) + '%';
+      if (currentScenario) runTest();
+    }
+
+    if (data.uiAction?.type === 'run_simulation' && data.uiAction.result) {
+      const r        = data.uiAction.result;
+      const poles    = data.uiAction.poles    ?? [];
+      const inpType  = data.uiAction.inputType ?? 'step';
+      addCustomScenario(r.method, r, poles, inpType);
+      pill = r.success ? `\u2699 Simuliert: ${r.method}` : `\u2717 Simulation fehlgeschlagen`;
+    }
+
+    appendMsg('assistant', data.message, pill);
+    chatHistory.push({ role: 'assistant', content: data.message });
+  } catch (e) {
+    thinking.remove();
+    appendMsg('assistant', 'Error: ' + e.message);
+  }
+}
+</script>
+</body>
+</html>

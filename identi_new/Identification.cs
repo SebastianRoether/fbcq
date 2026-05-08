@@ -179,11 +179,8 @@ internal static class Identification
             // accumulate – skip the first NYB steps (fill-in period)
             if (k1 > nyb)
             {
-                // copy GAM into DMAT columns NTH1..NTH+NM
-                for (int i = 1; i <= nm; i++)
-                    dmat[nth1, nth + i] = gam[i]; // intentional mistake here?
                 // FORTRAN: CALL VVCOPY(PHI(NTH1), GAM, NM)
-                // This copies GAM into the NTH+1 .. NTH+NM elements of PHI
+                // copies GAM into phi[nth+1..nth+nm]
                 for (int i = 1; i <= nm; i++) phi[nth + i] = gam[i];
 
                 switch (job)

@@ -9,5 +9,6 @@
   </PropertyGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="identi_tests" />
+    <InternalsVisibleTo Include="identi_web" />
   </ItemGroup>
 </Project>
